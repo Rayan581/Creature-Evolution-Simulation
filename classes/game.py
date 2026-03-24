@@ -12,43 +12,36 @@ from classes.neural_network import NeuralNetwork
 class Game:
     def __init__(self):
         self.energy_preview_creature = None
+        self.focused_creature = None
         pygame.init()
         pygame.display.set_caption(TITLE)
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         self.clock = pygame.time.Clock()
         self.running = True
+        self.speed_multiplier = 1
         # Simulation parameters
-        self.population_size = 32
-        self.food_count = 20
-        self.best_prey_file = "best_prey_brain.pkl"
-        self.best_predator_file = "best_predator_brain.pkl"
+        self.population_size = POPULATION_SIZE
+        self.food_count = FOOD_COUNT
+        self.best_brain_file = "best_unified_brain.pkl"
         
-        self.best_prey_weights = load_brain(self.best_prey_file)
-        if self.best_prey_weights is not None and self.best_prey_weights[0].shape[0] != 26:
-            self.best_prey_weights = None
-            
-        self.best_pred_weights = load_brain(self.best_predator_file)
-        if self.best_pred_weights is not None and self.best_pred_weights[0].shape[0] != 26:
-            self.best_pred_weights = None
+        if BRAIN_IO_MODE == "LOAD_AND_SAVE":
+            self.best_brain_weights = load_brain(self.best_brain_file)
+            if self.best_brain_weights is not None and self.best_brain_weights[0].shape[0] != 26:
+                self.best_brain_weights = None
+        else:
+            self.best_brain_weights = None
             
         self.creatures = []
-        num_preds = self.population_size // 4
-        
-        spawned_preds = 0
-        spawned_prey = 0
+        spawned_elite = 0
         
         for i in range(self.population_size):
-            is_predator = (i < num_preds)
-            c = Creature(random.uniform(0, WIDTH), random.uniform(0, HEIGHT), is_predator=is_predator)
+            start_omni = random.uniform(0, 1)
+            c = Creature(random.uniform(0, WIDTH), random.uniform(0, HEIGHT), omnivore=start_omni)
             
-            if is_predator and self.best_pred_weights is not None and spawned_preds < 3:
-                c.brain.set_weights(self.best_pred_weights)
-                c.brain.mutate(mutation_rate=0.1, mutation_strength=0.3)
-                spawned_preds += 1
-            elif not is_predator and self.best_prey_weights is not None and spawned_prey < 7:
-                c.brain.set_weights(self.best_prey_weights)
-                c.brain.mutate(mutation_rate=0.1, mutation_strength=0.3)
-                spawned_prey += 1
+            if self.best_brain_weights is not None and spawned_elite < 5:
+                c.brain.set_weights(self.best_brain_weights)
+                c.brain.mutate(mutation_rate=0.2, mutation_strength=0.5)
+                spawned_elite += 1
                 
             self.creatures.append(c)
         self.food = [self.spawn_food() for _ in range(self.food_count)]
@@ -60,50 +53,69 @@ class Game:
         self.graph_data_pred = []
         self.graph_timer = 0
         self.prev_champion = None  # Track top performer from previous gen
-        self.best_prey_fitness = None
-        if self.best_prey_weights is not None:
-            self.best_prey_fitness = float('-inf')
-            
-        self.best_pred_fitness = None
-        if self.best_pred_weights is not None:
-            self.best_pred_fitness = float('-inf')
+        self.best_brain_fitness = None
+        if self.best_brain_weights is not None:
+            self.best_brain_fitness = float('-inf')
 
     def spawn_food(self):
         return [random.uniform(0, WIDTH), random.uniform(0, HEIGHT)]
 
     def run(self):
         while self.running:
+            mouse_clicked = False
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         self.running = False
+                    elif event.key == pygame.K_UP:
+                        self.speed_multiplier = min(100, self.speed_multiplier + 1)
+                    elif event.key == pygame.K_DOWN:
+                        self.speed_multiplier = max(1, self.speed_multiplier - 1)
+                    elif event.key == pygame.K_r:
+                        alive_creatures = [c for c in self.creatures if c.alive]
+                        if alive_creatures:
+                            self.focused_creature = random.choice(alive_creatures)
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    mouse_clicked = True
             
-            # Mouse hover logic for energy preview
+            # Mouse hover logic for energy preview mapped to camera
             mx, my = pygame.mouse.get_pos()
+            cam_offset_x = 0
+            cam_offset_y = 0
+            if getattr(self, 'focused_creature', None) and self.focused_creature.alive:
+                cam_offset_x = WIDTH/2 - self.focused_creature.x
+                cam_offset_y = HEIGHT/2 - self.focused_creature.y
+
             found = False
             for creature in self.creatures:
                 if creature.alive:
-                    dx = mx - int(creature.x)
-                    dy = my - int(creature.y)
-                    # Use size for hover radius
+                    sx = creature.x + cam_offset_x
+                    sy = creature.y + cam_offset_y
+                    dx = mx - sx
+                    dy = my - sy
                     c_radius = 10 * np.sqrt(creature.size)
+                    
                     if dx*dx + dy*dy <= c_radius**2:
                         self.energy_preview_creature = creature
+                        if mouse_clicked:
+                            self.focused_creature = creature
                         found = True
                         break
             if not found:
                 self.energy_preview_creature = None
+                if mouse_clicked:
+                    self.focused_creature = None
 
             self.season_timer += 1
-            if self.season_timer > 600:
+            if self.season_timer > SEASON_LENGTH:
                 self.is_winter = not self.is_winter
                 self.season_timer = 0
                 
             progress = min(1.0, self.season_timer / 120.0)  # 2 second transition
-            winter_bg = (15, 25, 45)
-            summer_bg = (15, 20, 15)
+            winter_bg = Colors.WINTER_BG
+            summer_bg = Colors.SUMMER_BG
             
             def lerp(c1, c2, t):
                 return (int(c1[0] + (c2[0] - c1[0]) * t),
@@ -121,13 +133,23 @@ class Game:
                 
             self.screen.fill(bg_color)
             
-            # Subtle grid
-            for x_line in range(0, WIDTH, 50):
-                pygame.draw.line(self.screen, (30, 35, 40), (x_line, 0), (x_line, HEIGHT))
-            for y_line in range(0, HEIGHT, 50):
-                pygame.draw.line(self.screen, (30, 35, 40), (0, y_line), (WIDTH, y_line))
+            # Subtle moving grid
+            cx, cy = 0, 0
+            if self.focused_creature and self.focused_creature.alive:
+                cx = WIDTH/2 - self.focused_creature.x
+                cy = HEIGHT/2 - self.focused_creature.y
+                
+            grid_offset_x = int(cx) % 50
+            grid_offset_y = int(cy) % 50
+            
+            for x_line in range(grid_offset_x, WIDTH, 50):
+                pygame.draw.line(self.screen, Colors.GRID_LINE, (x_line, 0), (x_line, HEIGHT))
+            for y_line in range(grid_offset_y, HEIGHT, 50):
+                pygame.draw.line(self.screen, Colors.GRID_LINE, (0, y_line), (WIDTH, y_line))
 
-            self.update()
+            for _ in range(self.speed_multiplier):
+                self.update()
+                
             self.draw()
 
             pygame.display.flip()
@@ -138,60 +160,49 @@ class Game:
         new_offspring = []
         for creature in self.creatures:
             if creature.alive:
-                prey_l = [c for c in self.creatures if c.alive and not c.is_predator and c is not creature]
-                pred_l = [c for c in self.creatures if c.alive and c.is_predator and c is not creature]
+                other_creatures = [c for c in self.creatures if c.alive and c is not creature]
+                
                 # Calculate hearing level
-                my_species = pred_l if creature.is_predator else prey_l
                 hearing_level = 0.0
-                for s in my_species:
+                for s in other_creatures:
                     if s.shout_intensity > 0.01:
                         dist = np.sqrt((s.x - creature.x)**2 + (s.y - creature.y)**2)
                         if dist > 0:
                             hearing_level += s.shout_intensity / max(1.0, (dist / 10.0))
                 hearing_level = min(1.0, hearing_level)
                 
-                creature.update(self.food, prey_l, pred_l, WIDTH, HEIGHT, is_winter=self.is_winter, hearing_level=hearing_level)
+                creature.update(self.food, other_creatures, WIDTH, HEIGHT, is_winter=self.is_winter, hearing_level=hearing_level)
                 
-                eaten_idx = creature.check_eat(self.food, prey_l)
+                eaten_idx = creature.check_eat(self.food, other_creatures)
                 if eaten_idx is not None:
                     self.food[eaten_idx] = self.spawn_food()
                 
                 # Mating mechanics
-                if creature.mating_cooldown == 0 and creature.energy > 80 and creature.mating_urge > 0.5:
-                    my_species = pred_l if creature.is_predator else prey_l
+                if creature.mating_cooldown == 0 and creature.energy > MATING_ENERGY_THRESHOLD and creature.mating_urge > 0.5:
                     c_radius = 10 * np.sqrt(creature.size)
-                    for mate in my_species:
-                        if mate.mating_cooldown == 0 and mate.energy > 80 and mate.mating_urge > 0.5:
+                    for mate in other_creatures:
+                        if mate.mating_cooldown == 0 and mate.energy > MATING_ENERGY_THRESHOLD and mate.mating_urge > 0.5:
                             mate_radius = 10 * np.sqrt(mate.size)
                             dist_sq = (creature.x - mate.x)**2 + (creature.y - mate.y)**2
                             if dist_sq < (c_radius + mate_radius)**2:
                                 # They collided and both want to mate
-                                creature.energy -= 40
-                                mate.energy -= 40
-                                creature.mating_cooldown = 100
-                                mate.mating_cooldown = 100
+                                creature.energy -= MATING_ENERGY_COST
+                                mate.energy -= MATING_ENERGY_COST
+                                creature.mating_cooldown = MATING_COOLDOWN_FRAMES
+                                mate.mating_cooldown = MATING_COOLDOWN_FRAMES
                                 
                                 # Spawn child
                                 child_brain = NeuralNetwork.crossover(creature.brain, mate.brain)
                                 child_brain.mutate(self.ga.mutation_rate, self.ga.mutation_strength)
                                 child_size = max(0.5, (creature.size + mate.size)/2 + np.random.uniform(-0.1, 0.1))
                                 child_vision = max(50.0, (creature.vision_range + mate.vision_range)/2 + np.random.uniform(-20, 20))
-                                child_fov = max(0.5, min(np.pi*2, (creature.fov + mate.fov)/2 + np.random.uniform(-0.5, 0.5)))
+                                child_fov = max(0.5, min(np.pi, (creature.fov + mate.fov)/2 + np.random.uniform(-0.5, 0.5)))
+                                child_omni = max(0.0, min(1.0, (creature.omnivore + mate.omnivore)/2 + np.random.uniform(-0.1, 0.1)))
                                 
-                                child = Creature(creature.x, creature.y, energy=100, brain=child_brain, 
-                                                 is_predator=creature.is_predator, size=child_size,
-                                                 vision_range=child_vision, fov=child_fov)
+                                child = Creature(creature.x, creature.y, energy=STARTING_ENERGY, brain=child_brain, 
+                                                 size=child_size, vision_range=child_vision, fov=child_fov, omnivore=child_omni)
                                 child.angle = creature.angle + np.random.uniform(-0.5, 0.5)
                                 
-                                # 5% swap logic
-                                if random.random() < 0.05:
-                                    child.is_predator = not child.is_predator
-                                    if child.is_predator and self.best_pred_weights is not None:
-                                        child.brain.set_weights(self.best_pred_weights)
-                                    elif not child.is_predator and self.best_prey_weights is not None:
-                                        child.brain.set_weights(self.best_prey_weights)
-                                    child.brain.mutate(self.ga.mutation_rate, self.ga.mutation_strength)
-                                    
                                 new_offspring.append(child)
                                 break
         
@@ -199,33 +210,24 @@ class Game:
             self.creatures.extend(new_offspring)
 
         if all(not c.alive for c in self.creatures):
-            preyl = [c for c in self.creatures if not c.is_predator]
-            predl = [c for c in self.creatures if c.is_predator]
-            
-            if preyl:
-                best_prey = max(preyl, key=lambda c: c.get_fitness())
-                self.prev_champion_weights = best_prey.brain.get_weights()
-                prey_fit = best_prey.get_fitness()
-                if self.best_prey_fitness is None or prey_fit > self.best_prey_fitness:
-                    save_brain(best_prey.brain, self.best_prey_file)
-                    self.best_prey_fitness = prey_fit
-                    
-            if predl:
-                best_pred = max(predl, key=lambda c: c.get_fitness())
-                pred_fit = best_pred.get_fitness()
-                if self.best_pred_fitness is None or pred_fit > self.best_pred_fitness:
-                    save_brain(best_pred.brain, self.best_predator_file)
-                    self.best_pred_fitness = pred_fit
+            if self.creatures:
+                best_c = max(self.creatures, key=lambda c: c.get_fitness())
+                self.prev_champion_weights = best_c.brain.get_weights()
+                if BRAIN_IO_MODE in ["LOAD_AND_SAVE", "NEW_AND_SAVE"]:
+                    b_fit = best_c.get_fitness()
+                    if self.best_brain_fitness is None or b_fit > self.best_brain_fitness:
+                        save_brain(best_c.brain, self.best_brain_file)
+                        self.best_brain_fitness = b_fit
                     
             self.next_generation()
             
         self.graph_timer += 1
         if self.graph_timer > 5:
             self.graph_timer = 0
-            alive_prey = sum(1 for c in self.creatures if c.alive and not c.is_predator)
-            alive_pred = sum(1 for c in self.creatures if c.alive and c.is_predator)
-            self.graph_data_prey.append(alive_prey)
-            self.graph_data_pred.append(alive_pred)
+            alive_c = [c.omnivore for c in self.creatures if c.alive]
+            avg_omni = sum(alive_c) / len(alive_c) if alive_c else 0
+            self.graph_data_prey.append(avg_omni * 10)
+            self.graph_data_pred.append(0)
             if len(self.graph_data_prey) > 200:
                 self.graph_data_prey.pop(0)
                 self.graph_data_pred.pop(0)
@@ -242,21 +244,37 @@ class Game:
         self.food = [self.spawn_food() for _ in range(self.food_count)]
 
     def draw(self):
+        def to_screen(px, py):
+            if self.focused_creature and self.focused_creature.alive:
+                # Add camera offset
+                cx = WIDTH/2 - self.focused_creature.x
+                cy = HEIGHT/2 - self.focused_creature.y
+                return int(px + cx), int(py + cy)
+            return int(px), int(py)
+            
         # Draw glowing food
         for fx, fy in self.food:
-            pygame.draw.circle(self.screen, (20, 100, 40), (int(fx), int(fy)), 8, 2)
-            pygame.draw.circle(self.screen, (80, 255, 120), (int(fx), int(fy)), 4)
+            sx, sy = to_screen(fx, fy)
+            pygame.draw.circle(self.screen, Colors.FOOD_OUTER, (sx, sy), 8, 2)
+            pygame.draw.circle(self.screen, Colors.FOOD_INNER, (sx, sy), 4)
             
         # Draw creatures
         for creature in self.creatures:
             if creature.alive:
-                color = (250, 70, 70) if creature.is_predator else (60, 160, 250)
-                outline_color = (200, 40, 40) if creature.is_predator else (40, 100, 200)
-            else:
-                color = (70, 70, 70)
-                outline_color = (50, 50, 50)
+                # Lerp from PREY color to PREDATOR color based on omnivore val
+                r1, g1, b1 = Colors.PREY
+                r2, g2, b2 = Colors.PREDATOR
+                omni = creature.omnivore
+                color = (int(r1 + (r2-r1)*omni), int(g1 + (g2-g1)*omni), int(b1 + (b2-b1)*omni))
                 
-            x, y = int(creature.x), int(creature.y)
+                ro1, go1, bo1 = Colors.PREY_OUTLINE
+                ro2, go2, bo2 = Colors.PREDATOR_OUTLINE
+                outline_color = (int(ro1 + (ro2-ro1)*omni), int(go1 + (go2-go1)*omni), int(bo1 + (bo2-bo1)*omni))
+            else:
+                color = Colors.DEAD
+                outline_color = Colors.DEAD_OUTLINE
+                
+            x, y = to_screen(creature.x, creature.y)
             radius = int(10 * np.sqrt(creature.size))
             
             # Fill
@@ -266,103 +284,83 @@ class Game:
             
             # Visualize Shout (White ring)
             if creature.shout_intensity > 0.5:
-                pygame.draw.circle(self.screen, (200, 200, 200), (x, y), int(radius) + 6, 1)
+                pygame.draw.circle(self.screen, Colors.SHOUT_RING, (x, y), int(radius) + 6, 1)
                 
             # Visualize Mating Urge (Pink core or heart)
-            if creature.mating_urge > 0.5 and creature.energy > 80:
-                pygame.draw.circle(self.screen, (255, 105, 180), (x, y), max(2, int(radius)//2))
+            if creature.mating_urge > 0.5 and creature.energy > MATING_ENERGY_THRESHOLD:
+                pygame.draw.circle(self.screen, Colors.MATING_CORE, (x, y), max(2, int(radius)//2))
             
             # Draw direction nose
             if creature.alive:
-                end_x = x + int(np.cos(creature.angle) * (radius + 6))
-                end_y = y + int(np.sin(creature.angle) * (radius + 6))
+                end_x, end_y = to_screen(creature.x + np.cos(creature.angle) * (radius + 6), creature.y + np.sin(creature.angle) * (radius + 6))
                 pygame.draw.line(self.screen, outline_color, (x, y), (end_x, end_y), 3)
                 
-                # Optional: subtle FOV outline for hovered creature
-                if self.energy_preview_creature is creature:
-                    left_angle = creature.angle - creature.fov/2
-                    right_angle = creature.angle + creature.fov/2
+                # Draw FOV cone arc for hovered creature
+                if self.energy_preview_creature is creature or self.focused_creature is creature:
                     vr = creature.vision_range
-                    lx = x + int(np.cos(left_angle) * vr)
-                    ly = y + int(np.sin(left_angle) * vr)
-                    rx = x + int(np.cos(right_angle) * vr)
-                    ry = y + int(np.sin(right_angle) * vr)
-                    pygame.draw.line(self.screen, (100, 100, 100), (x, y), (lx, ly), 1)
-                    pygame.draw.line(self.screen, (100, 100, 100), (x, y), (rx, ry), 1)
+                    points = [(x, y)]
+                    # Create a smooth arc of points along the fov
+                    arc_angles = np.linspace(creature.angle - creature.fov/2, creature.angle + creature.fov/2, 10)
+                    for a in arc_angles:
+                        px, py = to_screen(creature.x + np.cos(a) * vr, creature.y + np.sin(a) * vr)
+                        points.append((px, py))
+                        
+                    # Create a transparent surface to draw the cone locally
+                    cone_surf = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+                    pygame.draw.polygon(cone_surf, Colors.FOV_CONE, points)
+                    self.screen.blit(cone_surf, (0, 0))
                 
             # Draw energy bar above creature
             bar_width = 18
             bar_height = 3
             bar_x = x - bar_width // 2
             bar_y = y - 16
-            energy_ratio = max(0, min(1, creature.energy / 100))
+            energy_ratio = max(0, min(1, creature.energy / STARTING_ENERGY))
             fill_width = int(bar_width * energy_ratio)
-            pygame.draw.rect(self.screen, (60, 60, 60),
+            pygame.draw.rect(self.screen, Colors.ENERGY_BAR_BG,
                              (bar_x, bar_y, bar_width, bar_height))
-            pygame.draw.rect(self.screen, (0, 220, 0),
+            pygame.draw.rect(self.screen, Colors.ENERGY_BAR_FILL,
                              (bar_x, bar_y, fill_width, bar_height))
             # Draw energy value if this is the hovered creature
-            if creature.alive and self.energy_preview_creature is creature:
+            if creature.alive and (self.energy_preview_creature is creature or self.focused_creature is creature):
                 font = pygame.font.SysFont(None, 22)
                 text_str = f"{creature.energy:.1f}"
-                shadow = font.render(text_str, True, (0, 0, 0))
+                shadow = font.render(text_str, True, Colors.ENERGY_LABEL_SHADOW)
                 self.screen.blit(shadow, (x + int(radius) + 7, y - 7))
-                energy_text = font.render(text_str, True, (255, 230, 80))
+                energy_text = font.render(text_str, True, Colors.ENERGY_LABEL)
                 self.screen.blit(energy_text, (x + int(radius) + 6, y - 8))
-        # Draw crown on previous champion if exists
-        if hasattr(self, 'prev_champion_weights') and self.prev_champion_weights is not None:
-            # Find the creature in the current population with the same brain weights
-            def weights_equal(w1, w2):
-                return all(np.allclose(a, b) for a, b in zip(w1, w2))
-            champion = next((c for c in self.creatures if weights_equal(
-                c.brain.get_weights(), self.prev_champion_weights)), None)
-            if champion is not None:
-                x, y = int(champion.x), int(champion.y)
-                crown_offset = 32  # increased distance above creature center
-                crown_base_y = y - crown_offset
-                crown_width = 14
-                crown_height = 8
-                base_rect = pygame.Rect(
-                    x - crown_width // 2, crown_base_y + crown_height, crown_width, 3)
-                pygame.draw.rect(self.screen, (220, 200, 0), base_rect)
-                points = [
-                    (x - crown_width // 2, crown_base_y + crown_height),
-                    (x - crown_width // 4, crown_base_y),
-                    (x, crown_base_y + crown_height // 2),
-                    (x + crown_width // 4, crown_base_y),
-                    (x + crown_width // 2, crown_base_y + crown_height)
-                ]
-                pygame.draw.polygon(self.screen, (255, 215, 0), points)
         # Translucent stats panel
         panel_surf = pygame.Surface((220, 110))
         panel_surf.set_alpha(180)
-        panel_surf.fill((20, 20, 20))
+        panel_surf.fill(Colors.PANEL_BG)
         self.screen.blit(panel_surf, (10, 10))
-        pygame.draw.rect(self.screen, (100, 100, 100), (10, 10, 220, 110), 1)
+        pygame.draw.rect(self.screen, Colors.PANEL_BORDER, (10, 10, 220, 110), 1)
         
         font = pygame.font.SysFont("Trebuchet MS", 24, bold=True)
-        text = font.render(f"Gen {self.generation}", True, (255, 255, 255))
+        text = font.render(f"Gen {self.generation}", True, Colors.UI_GEN_LABEL)
         self.screen.blit(text, (20, 20))
         
         season_str = "Winter" if self.is_winter else "Summer"
-        season_color = (150, 200, 255) if self.is_winter else (255, 200, 100)
+        season_color = Colors.UI_SEASON_WINTER if self.is_winter else Colors.UI_SEASON_SUMMER
         s_text = pygame.font.SysFont("Trebuchet MS", 20).render(f"Season: {season_str}", True, season_color)
         self.screen.blit(s_text, (20, 50))
         
         counts_font = pygame.font.SysFont("Trebuchet MS", 18)
-        prey_c = counts_font.render(f"Prey: {len([c for c in self.creatures if not c.is_predator and c.alive])}", True, (60, 160, 250))
-        pred_c = counts_font.render(f"Predators: {len([c for c in self.creatures if c.is_predator and c.alive])}", True, (250, 70, 70))
-        self.screen.blit(prey_c, (20, 75))
-        self.screen.blit(pred_c, (120, 75))
+        speed_text = counts_font.render(f"Speed: {self.speed_multiplier}x  (Use Up/Down)", True, Colors.UI_TEXT)
+        self.screen.blit(speed_text, (20, 90))
+        
+        total_alive = sum(1 for c in self.creatures if c.alive)
+        pop_c = counts_font.render(f"Alive: {total_alive}", True, Colors.UI_TEXT)
+        self.screen.blit(pop_c, (20, 75))
         
         # --- Draw Graph ---
         graph_bg = pygame.Surface((200, 100))
         graph_bg.set_alpha(180)
-        graph_bg.fill((20, 20, 20))
+        graph_bg.fill(Colors.PANEL_BG)
         self.screen.blit(graph_bg, (WIDTH - 220, HEIGHT - 120))
         
         graph_rect = pygame.Rect(WIDTH - 220, HEIGHT - 120, 200, 100)
-        pygame.draw.rect(self.screen, (200, 200, 200), graph_rect, 1)
+        pygame.draw.rect(self.screen, Colors.PANEL_BORDER, graph_rect, 1)
         
         max_val = max(10, max(self.graph_data_prey + self.graph_data_pred + [1]))
         if len(self.graph_data_prey) > 1:
@@ -372,11 +370,56 @@ class Game:
                 
                 y1_prey = HEIGHT - 20 - int((self.graph_data_prey[i] / max_val) * 100)
                 y2_prey = HEIGHT - 20 - int((self.graph_data_prey[i+1] / max_val) * 100)
-                pygame.draw.line(self.screen, (0, 128, 255), (x1, y1_prey), (x2, y2_prey), 2)
-                
-                y1_pred = HEIGHT - 20 - int((self.graph_data_pred[i] / max_val) * 100)
-                y2_pred = HEIGHT - 20 - int((self.graph_data_pred[i+1] / max_val) * 100)
-                pygame.draw.line(self.screen, (255, 50, 50), (x1, y1_pred), (x2, y2_pred), 2)
+                pygame.draw.line(self.screen, Colors.GRAPH_LINE, (x1, y1_prey), (x2, y2_prey), 2)
         
-        graph_title = pygame.font.SysFont(None, 18).render(f"Populations (Max: {max_val})", True, (200, 200, 200))
+        graph_title = pygame.font.SysFont(None, 18).render(f"Omnivore Spectrum x10", True, Colors.UI_TEXT)
         self.screen.blit(graph_title, (WIDTH - 215, HEIGHT - 115))
+        
+        # --- Draw Neural Network Sidebar if focused ---
+        if self.focused_creature and self.focused_creature.alive:
+            sidebar = pygame.Surface((300, HEIGHT))
+            sidebar.set_alpha(240)
+            sidebar.fill(Colors.NN_BG)
+            self.screen.blit(sidebar, (WIDTH - 300, 0))
+            pygame.draw.line(self.screen, Colors.NN_BORDER, (WIDTH - 300, 0), (WIDTH - 300, HEIGHT), 2)
+            
+            title = font.render(f"Brain Scan", True, Colors.NN_TITLE)
+            self.screen.blit(title, (WIDTH - 280, 20))
+            
+            weights = self.focused_creature.brain.get_weights()
+            if weights and len(weights) >= 4:
+                w1, b1, w2, b2 = weights
+                
+                in_nodes = self.focused_creature.brain.input_size
+                hid_nodes = self.focused_creature.brain.hidden_size
+                out_nodes = self.focused_creature.brain.output_size
+                
+                def draw_layer_nodes(x_pos, node_count, color=(100, 100, 100)):
+                    spacing = min(15, (HEIGHT - 100) / max(1, node_count))
+                    start_y = HEIGHT/2 - (spacing * node_count)/2
+                    nodes_pos = []
+                    for i in range(node_count):
+                        py = start_y + i * spacing
+                        pygame.draw.circle(self.screen, color, (x_pos, int(py)), 3)
+                        nodes_pos.append((x_pos, int(py)))
+                    return nodes_pos
+                    
+                in_points = draw_layer_nodes(WIDTH - 260, in_nodes, Colors.NN_NODES_IN)
+                hid_points = draw_layer_nodes(WIDTH - 150, hid_nodes, Colors.NN_NODES_HIDDEN)
+                out_points = draw_layer_nodes(WIDTH - 40, out_nodes, Colors.NN_NODES_OUT)
+                
+                # Output labels
+                labels = ["Rot", "Spd", "Sht", "Mat"]
+                lbl_font = pygame.font.SysFont(None, 16)
+                for i, (px, py) in enumerate(out_points):
+                    if i < len(labels):
+                        lbl = lbl_font.render(labels[i], True, Colors.NN_LABEL)
+                        self.screen.blit(lbl, (px - 25, py - 18))
+                        
+                # Draw dominant connections (w2) to prevent lag
+                for h in range(hid_nodes):
+                    for o in range(out_nodes):
+                        weight = w2[h, o]
+                        if abs(weight) > 1.0:
+                            c = Colors.NN_WEIGHT_POS if weight > 0 else Colors.NN_WEIGHT_NEG
+                            pygame.draw.line(self.screen, c, hid_points[h], out_points[o], 1)

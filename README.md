@@ -1,43 +1,64 @@
-# Creature Evolution Simulation
+# Creature Evolution Simulation 2.0
 
-A Python/Pygame-based artificial life ecosystem where Neural-Network-driven creatures evolve complex survival strategies using genetic algorithms. 
+A sophisticated artificial life ecosystem where Neural-Network-driven creatures evolve fluid survival strategies on a continuous omnivore spectrum.
 
-![Ecosystem](https://img.shields.io/badge/Ecosystem-Predator%20vs%20Prey-red)
 ![Status](https://img.shields.io/badge/Status-Fully%20Functional-brightgreen)
+![Engine](https://img.shields.io/badge/Engine-Python%20%2F%20Pygame-blue)
 
 ## 🧬 Evolutionary Features
 
+### Unified Omnivore Spectrum
+The rigid "Predator vs Prey" labels have been replaced by a continuous **Omnivore Trait** (0.0 to 1.0). 
+- **Blue (0.0):** Pure Herbivores. Gain maximum energy from grass but cannot digest meat.
+- **Red (1.0):** Pure Carnivores. Gain maximum energy from meat but cannot eat grass.
+- **Purple (0.5):** Omnivores. Can eat both but with reduced efficiency.
+- **Dynamic Hunting:** A creature can hunt and eat any other creature as long as its omnivore score is at least **0.2 higher** than its target's. This allows complex multi-tiered food chains to emerge naturally.
+
 ### Neural Network Genetics
-Each creature's brain is a multi-layer Neural Network that takes in **26 sensory inputs** (raycast vision, energy levels, audio) and outputs **4 critical actions** (Rotation, Speed, Shout Intensity, Mating Urge). Elite performers have their genes passed down to the next generation via crossover and random mutations.
+Each creature's brain is a Neural Network (26 inputs, 16 hidden, 4 outputs):
+- **Sensory Inputs:** 24-ray vision (detecting food proximity, creature proximity, and target omnivore scores), energy reserves, and hearing.
+- **Action Outputs:** Rotation (turning), Speed (movement), Shout Intensity (audio signal), and Mating Urge.
+- **Heredity:** Successful survivors pass their traits (size, FOV, vision range, and omnivore score) and neural weights to the next generation via genetic crossover and mutation.
 
-### Predator/Prey Arm's Race
-The ecosystem is rigidly split into a 25/75 ratio of **Predators (Red)** and **Prey (Blue)**. Predators cannot eat the green food on the map; their only source of energy is hunting other creatures! This forces an endless evolutionary loop where Prey discover new evasion tactics, and Predators adapt to hunt them.
+### Social Audio & Physical Mating
+- **Communication:** Creatures can "Shout" (white pulsating rings) which others of the same lineage can "Hear," enabling potential herd or pack behaviors.
+- **Reproduction:** Creatures do not clone. They must maintain high energy, broadcast a "Mating Urge" (pink core), and physically collide with a partner to spawn a mutated child.
 
-### Dynamic Environments & Seasons
-The simulation smoothly cycles between warm **Summers** and harsh **Winters**. During the Winter cycle, the base passive energy drain for all creatures is doubled, creating massive evolutionary pressure that brutally culls inefficient neural configurations.
+### Adaptive Seasons
+The simulation cycles between **Summer** and **Winter**. Environment colors and energy drains shift, forcing the population to adapt to seasonal scarcity or perish.
 
-### Physical Genetic Traits
-Creatures don't just evolve their brains—they evolve their bodies!
-- **Physical Size:** Mutates dynamically. Larger creatures have wider collision/eating radii but intrinsically move much slower.
-- **Vision FOV & Range:** Some creatures evolve massively long tunnel-vision, while others evolve tight 360-degree radar depending on what keeps them alive. 
-- *Note:* Larger bodies and wider vision cones heavily penalize the creature's passive energy reserves!
+---
 
-### Social Audio Communication
-Creatures possess a "Shouting" output action and a "Hearing" sensory input. If a creature decides to shout (visible as a white pulsating ring), all nearby creatures of the same species will instantly hear it, allowing them to organically evolve pack-hunting or herd-warning mechanics.
+## 🖥️ Interactive UI & Controls
 
-### Physical Field Mating
-Creatures do not magically clone. To reproduce mid-generation, two creatures of the exact same species must cross paths on the field, have high energy reserves, and simultaneously broadcast a "Mating Urge" (visible as a pink core). If they collide, their neural weights are dynamically crossed-over to spawn a fresh mutated child right onto the map!
+### Focus Camera & Brain Scan
+- **Click a Creature:** Instantly lock the camera to that creature. A dark sidebar will slide in showing a live **Brain Scan**—a real-time visualization of their neural network's architecture and firing synapses.
+- **Click Background:** Unlock the camera to return to a global view.
 
-## 💾 Saving & Loading
-The absolute best-performing Predator and the best-performing Prey of all time are automatically serialized and saved into `best_predator_brain.pkl` and `best_prey_brain.pkl`. Every time you launch the simulation, the initial population will be seeded with these champion genetics so your ecosystem never stops adapting!
+### Advanced Time Controls
+Fast-forward through millions of years of evolution using the keyboard:
+- **[UP ARROW]:** Increase simulation speed (up to 100x multiplier).
+- **[DOWN ARROW]:** Decrease simulation speed (minimum 1x).
+- **[R]:** Focus camera on a random living creature.
+- **[ESC]:** Exit simulation.
+
+### Centralized Configuration
+Tweak every aspect of the simulation in `config.py`:
+- **Populations:** Adjust `POPULATION_SIZE` and `FOOD_COUNT`.
+- **Bio-Mechanics:** Dial in `ENERGY_YIELD`, `MUTATION_RATE`, and `ELITISM_COUNT`.
+- **Visuals:** Edit the `Colors` class to change the entire UI palette in one place.
+- **Brain I/O:** Set `BRAIN_IO_MODE` to `LOAD_AND_SAVE`, `NEW_AND_SAVE`, or `NEW_NO_SAVE`.
+
+---
 
 ## 🚀 How to Run
-Ensure you have the required dependencies installed:
-```bash
-pip install pygame numpy
-```
 
-Then simply execute the master script:
-```bash
-python main.py
-```
+1. **Install Dependencies:**
+   ```bash
+   pip install pygame numpy
+   ```
+
+2. **Launch Simulation:**
+   ```bash
+   python main.py
+   ```
