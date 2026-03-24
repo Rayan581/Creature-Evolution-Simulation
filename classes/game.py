@@ -38,7 +38,7 @@ class Game:
             start_omni = random.uniform(0, 1)
             c = Creature(random.uniform(0, WIDTH), random.uniform(0, HEIGHT), omnivore=start_omni)
             
-            if self.best_brain_weights is not None and spawned_elite < 5:
+            if self.best_brain_weights is not None and spawned_elite < (self.population_size // 4):
                 c.brain.set_weights(self.best_brain_weights)
                 c.brain.mutate(mutation_rate=0.2, mutation_strength=0.5)
                 spawned_elite += 1

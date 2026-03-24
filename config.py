@@ -6,8 +6,8 @@ FPS = 60
 TITLE = "Creature Evolution Simulator"
 
 # Populations
-POPULATION_SIZE = 32
-FOOD_COUNT = 20
+POPULATION_SIZE = 48
+FOOD_COUNT = 24
 
 # Energy & Mechanics
 STARTING_ENERGY = 100.0
@@ -22,7 +22,7 @@ MATING_COOLDOWN_FRAMES = 100
 # "LOAD_AND_SAVE": Loads existing brains from file, saves new champions.
 # "NEW_AND_SAVE": Ignores existing files (fresh start), saves new champions.
 # "NEW_NO_SAVE": Ignores existing files, does NOT save to files.
-BRAIN_IO_MODE = "NEW_AND_SAVE"
+BRAIN_IO_MODE = "LOAD_AND_SAVE"
 
 # Genetics
 DEFAULT_VISION_RANGE = 150.0
