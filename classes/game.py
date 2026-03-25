@@ -29,6 +29,7 @@ class Game:
             if data is not None:
                 self.best_brain_weights = data["weights"]
                 self.best_brain_fitness = data["fitness"]
+                print(f"Loaded brain from {self.best_brain_file} (Fitness: {self.best_brain_fitness:.1f})")
                 if self.best_brain_weights[0].shape[0] != 26:
                     self.best_brain_weights = None
                     self.best_brain_fitness = None
