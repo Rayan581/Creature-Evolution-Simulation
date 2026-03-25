@@ -16,7 +16,8 @@ class Game:
         self.focused_creature = None
         pygame.init()
         pygame.display.set_caption(TITLE)
-        self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
+        self.width, self.height = WIDTH, HEIGHT
+        self.screen = pygame.display.set_mode((self.width, self.height), pygame.RESIZABLE)
         self.clock = pygame.time.Clock()
         self.running = True
         self.speed_multiplier = 1
@@ -74,8 +75,8 @@ class Game:
         self.regrowth_queue = []  # list of countdown timers for grass regrowth
 
     def spawn_food(self):
-        x = random.uniform(0, WIDTH)
-        y = random.uniform(0, HEIGHT)
+        x = random.uniform(0, self.width)
+        y = random.uniform(0, self.height)
         # In Winter, a fraction of food spawns as hardy berries
         if self.is_winter and random.random() < WINTER_BERRY_RATIO:
             return FoodItem(x, y, FoodItem.TYPE_BERRY)
@@ -116,6 +117,9 @@ class Game:
                             self.focus_toggle = not self.focus_toggle
                             if not self.focus_toggle:
                                 self.focused_creature = None
+                elif event.type == pygame.VIDEORESIZE:
+                    self.width, self.height = event.w, event.h
+                    self.screen = pygame.display.set_mode((self.width, self.height), pygame.RESIZABLE)
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     mouse_clicked = True
             
@@ -124,8 +128,8 @@ class Game:
             cam_offset_x = 0
             cam_offset_y = 0
             if getattr(self, 'focused_creature', None) and self.focused_creature.alive:
-                cam_offset_x = WIDTH/2 - self.focused_creature.x
-                cam_offset_y = HEIGHT/2 - self.focused_creature.y
+                cam_offset_x = self.width/2 - self.focused_creature.x
+                cam_offset_y = self.height/2 - self.focused_creature.y
 
             found = False
             for creature in self.creatures:
@@ -182,16 +186,16 @@ class Game:
             # Subtle moving grid
             cx, cy = 0, 0
             if self.focused_creature and self.focused_creature.alive:
-                cx = WIDTH/2 - self.focused_creature.x
-                cy = HEIGHT/2 - self.focused_creature.y
+                cx = self.width/2 - self.focused_creature.x
+                cy = self.height/2 - self.focused_creature.y
                 
             grid_offset_x = int(cx) % 50
             grid_offset_y = int(cy) % 50
             
-            for x_line in range(grid_offset_x, WIDTH, 50):
-                pygame.draw.line(self.screen, Colors.GRID_LINE, (x_line, 0), (x_line, HEIGHT))
-            for y_line in range(grid_offset_y, HEIGHT, 50):
-                pygame.draw.line(self.screen, Colors.GRID_LINE, (0, y_line), (WIDTH, y_line))
+            for x_line in range(grid_offset_x, self.width, 50):
+                pygame.draw.line(self.screen, Colors.GRID_LINE, (x_line, 0), (x_line, self.height))
+            for y_line in range(grid_offset_y, self.height, 50):
+                pygame.draw.line(self.screen, Colors.GRID_LINE, (0, y_line), (self.width, y_line))
 
             for _ in range(self.speed_multiplier):
                 self.update()
@@ -233,7 +237,7 @@ class Game:
                             hearing_level += s.shout_intensity / max(1.0, (dist / 10.0))
                 hearing_level = min(1.0, hearing_level)
                 
-                creature.update(self.food, other_creatures, WIDTH, HEIGHT, is_winter=self.is_winter, hearing_level=hearing_level)
+                creature.update(self.food, other_creatures, self.width, self.height, is_winter=self.is_winter, hearing_level=hearing_level)
                 
                 eaten_idx = creature.check_eat(self.food, other_creatures)
                 if eaten_idx is not None:
@@ -312,8 +316,8 @@ class Game:
     def next_generation(self):
         new_creatures = self.ga.next_generation(self.population_archive)
         for c in new_creatures:
-            c.x = random.uniform(0, WIDTH)
-            c.y = random.uniform(0, HEIGHT)
+            c.x = random.uniform(0, self.width)
+            c.y = random.uniform(0, self.height)
         self.creatures = new_creatures
         self.population_archive = list(new_creatures)
         self.generation += 1
@@ -325,8 +329,8 @@ class Game:
         def to_screen(px, py):
             if self.focused_creature and self.focused_creature.alive:
                 # Add camera offset
-                cx = WIDTH/2 - self.focused_creature.x
-                cy = HEIGHT/2 - self.focused_creature.y
+                cx = self.width/2 - self.focused_creature.x
+                cy = self.height/2 - self.focused_creature.y
                 return int(px + cx), int(py + cy)
             return int(px), int(py)
             
