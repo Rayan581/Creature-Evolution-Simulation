@@ -16,7 +16,7 @@ PREY_ENERGY_YIELD = 75.0
 
 # Food System
 GRASS_ENERGY = 40.0          # max energy from fresh grass
-BERRY_ENERGY = 20.0          # berries: less energy, but survive winter
+BERRY_ENERGY = 30.0          # berries: less energy than grass, but survive winter (buffed for herbivores)
 MEAT_ENERGY = 75.0           # meat drops from dead creatures
 GRASS_MAX_AGE = 1800         # frames until grass fully decays (~30s @ 60fps)
 BERRY_MAX_AGE = 3600         # berries last longer

@@ -76,7 +76,9 @@ class Creature:
         outputs = self.brain.forward(inputs)
         
         self.angle += outputs[0] * 0.15
-        speed = max(0, outputs[1]) * (BASE_SPEED_MULTIPLIER / np.sqrt(self.size))
+        # Herbivores are leaner and faster — up to +40% speed for omnivore=0
+        speed_bonus = 1.0 + 0.4 * (1.0 - self.omnivore)
+        speed = max(0, outputs[1]) * (BASE_SPEED_MULTIPLIER / np.sqrt(self.size)) * speed_bonus
         self.shout_intensity = max(0.0, min(1.0, outputs[2]))
         self.mating_urge = max(0.0, min(1.0, outputs[3]))
         
@@ -88,10 +90,13 @@ class Creature:
         self.x = self.x % width
         self.y = self.y % height
         
-        # Energy drain scales with size, age, vision range, fov and shout
-        base_drain = 0.15 * self.size + (0.0001 * self.age) + (self.vision_range / 3000.0) + (self.fov / 50.0) + (self.shout_intensity * 0.02)
+        # Energy drain: herbivores (omnivore=0) cost 40% less to run
+        metabolic_factor = 0.6 + 0.4 * self.omnivore
+        base_drain = (0.15 * self.size + (0.0001 * self.age) + (self.vision_range / 3000.0) + (self.fov / 50.0) + (self.shout_intensity * 0.02)) * metabolic_factor
+        # Herbivores are cold-adapted: only ×1.2 winter drain vs ×1.5 for carnivores
         if is_winter:
-            base_drain *= 1.5
+            winter_mult = 1.2 + 0.3 * self.omnivore
+            base_drain *= winter_mult
             
         self.energy -= base_drain
         self.survival_time += 1
