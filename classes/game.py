@@ -72,6 +72,8 @@ class Game:
 
         self.focus_toggle = False
         self.manual_focus = False
+        self.smart_speed = False
+        self.smart_speed_rect = pygame.Rect(20, 115, 180, 25)
         self.regrowth_queue = []  # list of countdown timers for grass regrowth
 
     def spawn_food(self):
@@ -117,11 +119,16 @@ class Game:
                             self.focus_toggle = not self.focus_toggle
                             if not self.focus_toggle:
                                 self.focused_creature = None
+                    elif event.key == pygame.K_s:
+                        self.smart_speed = not self.smart_speed
                 elif event.type == pygame.VIDEORESIZE:
                     self.width, self.height = event.w, event.h
                     self.screen = pygame.display.set_mode((self.width, self.height), pygame.RESIZABLE)
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     mouse_clicked = True
+                    if self.smart_speed_rect.collidepoint(event.pos):
+                        self.smart_speed = not self.smart_speed
+                        mouse_clicked = False  # treat this as purely a UI click
             
             # Mouse hover logic for energy preview mapped to camera
             mx, my = pygame.mouse.get_pos()
@@ -157,6 +164,19 @@ class Game:
                 if mouse_clicked:
                     self.manual_focus = True
                     self.focus_toggle = False
+
+            # Smart Speed calculation
+            if self.smart_speed:
+                pop = len(self.creatures)
+                # 5x speed at 5 creatures, 1x speed at FULL POPULATION
+                # Linear transition
+                if pop <= 5:
+                    self.speed_multiplier = 5
+                elif pop >= self.population_size:
+                    self.speed_multiplier = 1
+                else:
+                    ratio = (pop - 5) / (self.population_size - 5)
+                    self.speed_multiplier = int(max(1, min(5, 5 - ratio * 4)))
 
             self.season_timer += 1
             if self.season_timer > SEASON_LENGTH:
@@ -424,11 +444,11 @@ class Game:
                 self.screen.blit(fitness_text, (x - 10, y + int(radius) + 7))
 
         # Translucent stats panel
-        panel_surf = pygame.Surface((220, 110))
+        panel_surf = pygame.Surface((220, 150))
         panel_surf.set_alpha(180)
         panel_surf.fill(Colors.PANEL_BG)
         self.screen.blit(panel_surf, (10, 10))
-        pygame.draw.rect(self.screen, Colors.PANEL_BORDER, (10, 10, 220, 110), 1)
+        pygame.draw.rect(self.screen, Colors.PANEL_BORDER, (10, 10, 220, 150), 1)
         
         font = pygame.font.SysFont("Trebuchet MS", 24, bold=True)
         text = font.render(f"Gen {self.generation}", True, Colors.UI_GEN_LABEL)
@@ -440,8 +460,19 @@ class Game:
         self.screen.blit(s_text, (20, 50))
         
         counts_font = pygame.font.SysFont("Trebuchet MS", 18)
-        speed_text = counts_font.render(f"Speed: {self.speed_multiplier}x  (Use Up/Down)", True, Colors.UI_TEXT)
+        speed_text = counts_font.render(f"Speed: {self.speed_multiplier}x", True, Colors.UI_TEXT)
         self.screen.blit(speed_text, (20, 90))
+        
+        # Smart Speed Button
+        btn_color = (100, 255, 100) if self.smart_speed else (150, 150, 150)
+        pygame.draw.rect(self.screen, (40, 40, 40), self.smart_speed_rect)
+        pygame.draw.rect(self.screen, btn_color, self.smart_speed_rect, 1)
+        
+        btn_text = "Smart Speed: ON" if self.smart_speed else "Smart Speed: OFF"
+        s_btn_font = pygame.font.SysFont("Trebuchet MS", 16, bold=self.smart_speed)
+        s_btn_surf = s_btn_font.render(btn_text, True, btn_color)
+        self.screen.blit(s_btn_surf, (self.smart_speed_rect.centerx - s_btn_surf.get_width()//2, 
+                                     self.smart_speed_rect.centery - s_btn_surf.get_height()//2))
         
         total_alive = sum(1 for c in self.creatures if c.alive)
         pop_c = counts_font.render(f"Alive: {total_alive}", True, Colors.UI_TEXT)
