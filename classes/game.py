@@ -25,11 +25,19 @@ class Game:
         self.best_brain_file = "best_unified_brain.pkl"
         
         if BRAIN_IO_MODE == "LOAD_AND_SAVE":
-            self.best_brain_weights = load_brain(self.best_brain_file)
-            if self.best_brain_weights is not None and self.best_brain_weights[0].shape[0] != 26:
+            data = load_brain(self.best_brain_file)
+            if data is not None:
+                self.best_brain_weights = data["weights"]
+                self.best_brain_fitness = data["fitness"]
+                if self.best_brain_weights[0].shape[0] != 26:
+                    self.best_brain_weights = None
+                    self.best_brain_fitness = None
+            else:
                 self.best_brain_weights = None
+                self.best_brain_fitness = None
         else:
             self.best_brain_weights = None
+            self.best_brain_fitness = None
             
         self.creatures = []
         self.population_archive = []
@@ -56,8 +64,11 @@ class Game:
         self.graph_timer = 0
         self.prev_champion = None  # Track top performer from previous gen
         self.best_brain_fitness = None
-        if self.best_brain_weights is not None:
+        if self.best_brain_weights is not None and self.best_brain_fitness is None:
             self.best_brain_fitness = float('-inf')
+
+        self.focus_toggle = False
+        self.manual_focus = False
 
     def spawn_food(self):
         return [random.uniform(0, WIDTH), random.uniform(0, HEIGHT)]
@@ -68,7 +79,7 @@ class Game:
             self.prev_champion_weights = best_c.brain.get_weights()
             b_fit = best_c.get_fitness()
             if self.best_brain_fitness is None or b_fit > self.best_brain_fitness:
-                save_brain(best_c.brain, self.best_brain_file)
+                save_brain(best_c.brain, b_fit, self.best_brain_file)
                 self.best_brain_fitness = b_fit
                 print(f"Gen {self.generation}: New champion saved (Fitness: {b_fit:.1f})")
 
@@ -88,9 +99,11 @@ class Game:
                     elif event.key == pygame.K_DOWN:
                         self.speed_multiplier = max(1, self.speed_multiplier - 1)
                     elif event.key == pygame.K_r:
-                        alive_creatures = [c for c in self.creatures if c.alive]
-                        if alive_creatures:
-                            self.focused_creature = random.choice(alive_creatures)
+                        # R only works if we aren't manually focused on something
+                        if not self.manual_focus:
+                            self.focus_toggle = not self.focus_toggle
+                            if not self.focus_toggle:
+                                self.focused_creature = None
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     mouse_clicked = True
             
@@ -121,6 +134,13 @@ class Game:
                 self.energy_preview_creature = None
                 if mouse_clicked:
                     self.focused_creature = None
+                    self.manual_focus = False
+                    self.focus_toggle = False
+            else:
+                # We found a creature via click or hover
+                if mouse_clicked:
+                    self.manual_focus = True
+                    self.focus_toggle = False
 
             self.season_timer += 1
             if self.season_timer > SEASON_LENGTH:
@@ -163,6 +183,11 @@ class Game:
 
             for _ in range(self.speed_multiplier):
                 self.update()
+
+            if self.focus_toggle:
+                alive_creatures = [c for c in self.creatures if c.alive]
+                if alive_creatures:
+                    self.focused_creature = max(alive_creatures, key=lambda c: c.get_fitness())
                 
             self.draw()
 
@@ -342,6 +367,15 @@ class Game:
                 self.screen.blit(shadow, (x + int(radius) + 7, y - 7))
                 energy_text = font.render(text_str, True, Colors.ENERGY_LABEL)
                 self.screen.blit(energy_text, (x + int(radius) + 6, y - 8))
+
+                # Draw fitness score under the focused creature
+                font = pygame.font.SysFont(None, 16)
+                fitness_str = f"{creature.get_fitness():.1f}"
+                shadow = font.render(fitness_str, True, Colors.ENERGY_LABEL_SHADOW)
+                self.screen.blit(shadow, (x - 10, y + int(radius) + 6))
+                fitness_text = font.render(fitness_str, True, Colors.ENERGY_LABEL)
+                self.screen.blit(fitness_text, (x - 10, y + int(radius) + 7))
+
         # Translucent stats panel
         panel_surf = pygame.Surface((220, 110))
         panel_surf.set_alpha(180)
