@@ -65,9 +65,9 @@ class Game:
         self.graph_data_pred = []
         self.graph_timer = 0
         self.prev_champion = None  # Track top performer from previous gen
-        self.best_brain_fitness = None
-        if self.best_brain_weights is not None and self.best_brain_fitness is None:
-            self.best_brain_fitness = float('-inf')
+        # Only set fallback fitness if it was NOT already loaded from file
+        if not hasattr(self, 'best_brain_fitness') or self.best_brain_fitness is None:
+            self.best_brain_fitness = float('-inf') if self.best_brain_weights is not None else None
 
         self.focus_toggle = False
         self.manual_focus = False
