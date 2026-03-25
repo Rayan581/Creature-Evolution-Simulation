@@ -1,6 +1,6 @@
 import numpy as np
 from .neural_network import NeuralNetwork
-from config import STARTING_ENERGY, FOOD_ENERGY_YIELD, PREY_ENERGY_YIELD, DEFAULT_VISION_RANGE, BASE_SPEED_MULTIPLIER, EXPLORATION_FITNESS_WEIGHT, EFFICIENCY_FITNESS_WEIGHT
+from config import STARTING_ENERGY, PREY_ENERGY_YIELD, DEFAULT_VISION_RANGE, BASE_SPEED_MULTIPLIER, EXPLORATION_FITNESS_WEIGHT, EFFICIENCY_FITNESS_WEIGHT
 
 
 class Creature:
@@ -49,9 +49,9 @@ class Creature:
             best_c_dist = ray_length
             best_c_omni = 0.0
             
-            for fx, fy in food_list:
-                dx = fx - self.x
-                dy = fy - self.y
+            for food in food_list:
+                dx = food.x - self.x
+                dy = food.y - self.y
                 dist_sq = dx**2 + dy**2
                 if dist_sq == 0 or dist_sq > ray_length**2: continue
                 dist = np.sqrt(dist_sq)
@@ -112,11 +112,19 @@ class Creature:
                     self.energy += PREY_ENERGY_YIELD * self.omnivore
                     self.food_eaten += 1
                     
-        # Eat grass logic (digestible amount relies on low omnivore score)
-        for i, (fx, fy) in enumerate(food_list):
-            dist_sq = (self.x - fx) ** 2 + (self.y - fy) ** 2
+        # Eat food items based on type
+        for i, food in enumerate(food_list):
+            dist_sq = (self.x - food.x) ** 2 + (self.y - food.y) ** 2
             if dist_sq < (creature_radius + food_radius) ** 2:
-                self.energy += FOOD_ENERGY_YIELD * (1.0 - self.omnivore)
+                if food.type == "grass":
+                    # Herbivores digest grass best; carnivores get very little
+                    self.energy += food.current_energy * (1.0 - self.omnivore)
+                elif food.type == "berry":
+                    # Berries: anyone can eat them, omnivores slightly less efficient
+                    self.energy += food.current_energy * (1.0 - self.omnivore * 0.4)
+                elif food.type == "meat":
+                    # Meat drops: carnivores digest well, herbivores cannot
+                    self.energy += food.current_energy * self.omnivore
                 self.food_eaten += 1
                 return i
                 

@@ -5,6 +5,7 @@ from config import *
 import numpy as np
 import random
 from classes.creature import Creature
+from classes.food import FoodItem
 from classes.genetic_algorithm import GeneticAlgorithm
 from classes.neural_network import NeuralNetwork
 
@@ -70,9 +71,19 @@ class Game:
 
         self.focus_toggle = False
         self.manual_focus = False
+        self.regrowth_queue = []  # list of countdown timers for grass regrowth
 
     def spawn_food(self):
-        return [random.uniform(0, WIDTH), random.uniform(0, HEIGHT)]
+        x = random.uniform(0, WIDTH)
+        y = random.uniform(0, HEIGHT)
+        # In Winter, a fraction of food spawns as hardy berries
+        if self.is_winter and random.random() < WINTER_BERRY_RATIO:
+            return FoodItem(x, y, FoodItem.TYPE_BERRY)
+        return FoodItem(x, y, FoodItem.TYPE_GRASS)
+
+    def spawn_meat_drop(self, x, y):
+        """Create a meat pile at a dead creature's position."""
+        self.food.append(FoodItem(x, y, FoodItem.TYPE_MEAT))
 
     def save_champion(self):
         if BRAIN_IO_MODE in ["LOAD_AND_SAVE", "NEW_AND_SAVE"] and self.population_archive:
@@ -199,8 +210,15 @@ class Game:
     def update(self):
         new_offspring = []
         
-        # Prune dead creatures from the active list
-        self.creatures = [c for c in self.creatures if c.alive]
+        # Prune dead creatures from the active list; spawn meat drops
+        alive_now = []
+        for c in self.creatures:
+            if c.alive:
+                alive_now.append(c)
+            else:
+                # Leave a meat drop at death location
+                self.spawn_meat_drop(c.x, c.y)
+        self.creatures = alive_now
         
         for creature in self.creatures:
             if creature.alive:
@@ -219,7 +237,10 @@ class Game:
                 
                 eaten_idx = creature.check_eat(self.food, other_creatures)
                 if eaten_idx is not None:
-                    self.food[eaten_idx] = self.spawn_food()
+                    eaten = self.food.pop(eaten_idx)
+                    # Only grass triggers a regrowth timer; berries/meat don't respawn
+                    if eaten.type == FoodItem.TYPE_GRASS:
+                        self.regrowth_queue.append(FOOD_REGROWTH_DELAY)
                 
                 # Mating mechanics
                 if creature.mating_cooldown == 0 and creature.energy > MATING_ENERGY_THRESHOLD and creature.mating_urge > 0.5:
@@ -257,6 +278,19 @@ class Game:
         if new_offspring:
             self.creatures.extend(new_offspring)
             self.population_archive.extend(new_offspring)
+
+        # Tick food decay and remove dead items; count how many to re-seed
+        prev_grass = sum(1 for f in self.food if f.type != FoodItem.TYPE_MEAT)
+        self.food = [f for f in self.food if not f.is_dead]
+        for f in self.food:
+            f.tick()
+
+        # Regrowth queue: tick down timers, spawn new grass when ready
+        self.regrowth_queue = [t - 1 for t in self.regrowth_queue]
+        ready = [t for t in self.regrowth_queue if t <= 0]
+        self.regrowth_queue = [t for t in self.regrowth_queue if t > 0]
+        for _ in ready:
+            self.food.append(self.spawn_food())
 
         if not self.creatures:
             if self.population_archive:
@@ -296,11 +330,19 @@ class Game:
                 return int(px + cx), int(py + cy)
             return int(px), int(py)
             
-        # Draw glowing food
-        for fx, fy in self.food:
-            sx, sy = to_screen(fx, fy)
-            pygame.draw.circle(self.screen, Colors.FOOD_OUTER, (sx, sy), 8, 2)
-            pygame.draw.circle(self.screen, Colors.FOOD_INNER, (sx, sy), 4)
+        # Draw food items with decay gradient
+        for food in self.food:
+            sx, sy = to_screen(food.x, food.y)
+            r = food.radius()
+            inner_color = food.color
+            if food.type == FoodItem.TYPE_MEAT:
+                # Meat: draw a solid filled circle, slightly larger
+                pygame.draw.circle(self.screen, inner_color, (sx, sy), r + 2)
+            else:
+                # Grass / Berry: outer ring + inner dot
+                outer_color = tuple(max(0, c - 60) for c in inner_color)
+                pygame.draw.circle(self.screen, outer_color, (sx, sy), r + 3, 2)
+                pygame.draw.circle(self.screen, inner_color, (sx, sy), r)
             
         # Draw active creatures
         for creature in self.creatures:

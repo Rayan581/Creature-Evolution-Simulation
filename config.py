@@ -11,8 +11,18 @@ FOOD_COUNT = 48
 
 # Energy & Mechanics
 STARTING_ENERGY = 100.0
-FOOD_ENERGY_YIELD = 40.0
+FOOD_ENERGY_YIELD = 40.0  # legacy kept for compatibility
 PREY_ENERGY_YIELD = 75.0
+
+# Food System
+GRASS_ENERGY = 40.0          # max energy from fresh grass
+BERRY_ENERGY = 20.0          # berries: less energy, but survive winter
+MEAT_ENERGY = 75.0           # meat drops from dead creatures
+GRASS_MAX_AGE = 1800         # frames until grass fully decays (~30s @ 60fps)
+BERRY_MAX_AGE = 3600         # berries last longer
+MEAT_MAX_AGE  = 1200         # meat rots faster (~20s)
+FOOD_REGROWTH_DELAY = 180    # frames before eaten grass respawns (~3s)
+WINTER_BERRY_RATIO  = 0.6    # fraction of new food that becomes berries in Winter
 
 MATING_ENERGY_THRESHOLD = 80.0
 MATING_ENERGY_COST = 40.0
@@ -25,7 +35,7 @@ EFFICIENCY_FITNESS_WEIGHT = 500.0
 # "LOAD_AND_SAVE": Loads existing brains from file, saves new champions.
 # "NEW_AND_SAVE": Ignores existing files (fresh start), saves new champions.
 # "NEW_NO_SAVE": Ignores existing files, does NOT save to files.
-BRAIN_IO_MODE = "NEW_AND_SAVE"
+BRAIN_IO_MODE = "LOAD_AND_SAVE"
 
 # Genetics
 DEFAULT_VISION_RANGE = 150.0
@@ -51,9 +61,15 @@ class Colors:
     DEAD = (70, 70, 70)
     DEAD_OUTLINE = (50, 50, 50)
 
-    # Food
+    # Food — legacy (kept for safety)
     FOOD_INNER = (80, 255, 120)
     FOOD_OUTER = (20, 100, 40)
+
+    # Food decay system
+    FOOD_GRASS_FULL = (80, 255, 100)   # bright green
+    FOOD_BERRY_FULL = (200, 80, 220)   # purple-pink
+    FOOD_MEAT_FULL  = (220, 60, 60)    # warm red
+    FOOD_DEAD       = (45, 45, 45)     # dark grey (fully decayed)
 
     # UI
     GRID_LINE = (30, 35, 40)
