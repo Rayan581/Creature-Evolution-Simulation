@@ -74,6 +74,7 @@ class Game:
         self.manual_focus = False
         self.smart_speed = False
         self.smart_speed_rect = pygame.Rect(20, 115, 180, 25)
+        self.focus_toggle_rect = pygame.Rect(20, 145, 180, 25)
         self.regrowth_queue = []  # list of countdown timers for grass regrowth
 
     def spawn_food(self):
@@ -129,6 +130,12 @@ class Game:
                     if self.smart_speed_rect.collidepoint(event.pos):
                         self.smart_speed = not self.smart_speed
                         mouse_clicked = False  # treat this as purely a UI click
+                    elif self.focus_toggle_rect.collidepoint(event.pos):
+                        if not self.manual_focus:
+                            self.focus_toggle = not self.focus_toggle
+                            if not self.focus_toggle:
+                                self.focused_creature = None
+                        mouse_clicked = False
             
             # Mouse hover logic for energy preview mapped to camera
             mx, my = pygame.mouse.get_pos()
@@ -444,11 +451,11 @@ class Game:
                 self.screen.blit(fitness_text, (x - 10, y + int(radius) + 7))
 
         # Translucent stats panel
-        panel_surf = pygame.Surface((220, 150))
+        panel_surf = pygame.Surface((220, 185))
         panel_surf.set_alpha(180)
         panel_surf.fill(Colors.PANEL_BG)
         self.screen.blit(panel_surf, (10, 10))
-        pygame.draw.rect(self.screen, Colors.PANEL_BORDER, (10, 10, 220, 150), 1)
+        pygame.draw.rect(self.screen, Colors.PANEL_BORDER, (10, 10, 220, 185), 1)
         
         font = pygame.font.SysFont("Trebuchet MS", 24, bold=True)
         text = font.render(f"Gen {self.generation}", True, Colors.UI_GEN_LABEL)
@@ -473,6 +480,17 @@ class Game:
         s_btn_surf = s_btn_font.render(btn_text, True, btn_color)
         self.screen.blit(s_btn_surf, (self.smart_speed_rect.centerx - s_btn_surf.get_width()//2, 
                                      self.smart_speed_rect.centery - s_btn_surf.get_height()//2))
+        
+        # Champion Focus Button
+        f_btn_color = (100, 200, 255) if self.focus_toggle else (150, 150, 150)
+        pygame.draw.rect(self.screen, (40, 40, 40), self.focus_toggle_rect)
+        pygame.draw.rect(self.screen, f_btn_color, self.focus_toggle_rect, 1)
+        
+        f_btn_text = "Champion Focus: ON" if self.focus_toggle else "Champion Focus: OFF"
+        f_btn_font = pygame.font.SysFont("Trebuchet MS", 16, bold=self.focus_toggle)
+        f_btn_surf = f_btn_font.render(f_btn_text, True, f_btn_color)
+        self.screen.blit(f_btn_surf, (self.focus_toggle_rect.centerx - f_btn_surf.get_width()//2, 
+                                     self.focus_toggle_rect.centery - f_btn_surf.get_height()//2))
         
         total_alive = sum(1 for c in self.creatures if c.alive)
         pop_c = counts_font.render(f"Alive: {total_alive}", True, Colors.UI_TEXT)

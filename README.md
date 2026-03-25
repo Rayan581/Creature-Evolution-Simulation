@@ -44,7 +44,7 @@ Each creature's brain is a Neural Network (26 inputs, 16 hidden, 4 outputs):
 
 ### Smart Focus Camera & Brain Scan
 - **Click a Creature:** Instantly lock the camera to that creature. A dark sidebar will slide in showing a live **Brain Scan**—a real-time visualization of their neural network's architecture.
-- **Auto-Tracking:** The camera system intelligently manages focus. If a tracked creature dies, it automatically transitions to a new high-fitness individual.
+- **Auto-Tracking & Button:** The camera system intelligently manages focus. Toggle **Champion Focus** via the UI button or `[R]` to auto-track the most fit individual.
 - **Click Background:** Unlock the camera to return to a global view.
 
 ### Advanced Time & Session Controls
