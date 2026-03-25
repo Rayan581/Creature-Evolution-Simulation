@@ -14,33 +14,37 @@ The rigid "Predator vs Prey" labels have been replaced by a continuous **Omnivor
 - **Purple (0.5):** Omnivores. Can eat both but with reduced efficiency.
 - **Dynamic Hunting:** A creature can hunt and eat any other creature as long as its omnivore score is at least **0.2 higher** than its target's. This allows complex multi-tiered food chains to emerge naturally.
 
-### Neural Network Genetics
+### Neural Network Genetics & Persistence
 Each creature's brain is a Neural Network (26 inputs, 16 hidden, 4 outputs):
 - **Sensory Inputs:** 24-ray vision (detecting food proximity, creature proximity, and target omnivore scores), energy reserves, and hearing.
 - **Action Outputs:** Rotation (turning), Speed (movement), Shout Intensity (audio signal), and Mating Urge.
-- **Heredity:** Successful survivors pass their traits (size, FOV, vision range, and omnivore score) and neural weights to the next generation via genetic crossover and mutation.
+- **Persistent Evolution:** The simulation now tracks **Global ELT (Elite)** brains across generations. Only the most successful survivors' neural weights are preserved, ensuring that evolutionary progress is never lost.
+- **Heredity:** Offspring inherit refined traits (size, FOV, vision range, and omnivore score) and neural weights via genetic crossover and mutation.
 
 ### Social Audio & Physical Mating
 - **Communication:** Creatures can "Shout" (white pulsating rings) which others of the same lineage can "Hear," enabling potential herd or pack behaviors.
 - **Reproduction:** Creatures do not clone. They must maintain high energy, broadcast a "Mating Urge" (pink core), and physically collide with a partner to spawn a mutated child.
 
-### Adaptive Seasons
-The simulation cycles between **Summer** and **Winter**. Environment colors and energy drains shift, forcing the population to adapt to seasonal scarcity or perish.
+### Adaptive Seasons & Performance
+- **Seasonal Cycles:** The simulation cycles between **Summer** and **Winter**. Environment colors and energy drains shift, forcing the population to adapt to seasonal scarcity or perish.
+- **Engine Optimization:** Background processes automatically prune dead creature data, maintaining high FPS even during massive population explosions or complex evolutionary events.
 
 ---
 
 ## 🖥️ Interactive UI & Controls
 
-### Focus Camera & Brain Scan
+### Smart Focus Camera & Brain Scan
 - **Click a Creature:** Instantly lock the camera to that creature. A dark sidebar will slide in showing a live **Brain Scan**—a real-time visualization of their neural network's architecture and firing synapses.
+- **Auto-Tracking:** The camera system intelligently manages focus. If a tracked creature dies, the camera can automatically transition to a new high-fitness individual to keep the focus on the action.
 - **Click Background:** Unlock the camera to return to a global view.
 
-### Advanced Time Controls
+### Advanced Time & Session Controls
 Fast-forward through millions of years of evolution using the keyboard:
 - **[UP ARROW]:** Increase simulation speed (up to 100x multiplier).
 - **[DOWN ARROW]:** Decrease simulation speed (minimum 1x).
-- **[R]:** Focus camera on a random living creature.
-- **[ESC]:** Exit simulation.
+- **[R]:** Toggle Auto-Focus on the highest-fitness creature.
+- **[ESC]:** Save progress and exit simulation.
+- **Save on Exit:** The simulation now automatically preserves the current state of evolution upon exit, allowing you to resume exactly where you left off.
 
 ### Centralized Configuration
 Tweak every aspect of the simulation in `config.py`:
