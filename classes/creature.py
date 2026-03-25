@@ -1,6 +1,6 @@
 import numpy as np
 from .neural_network import NeuralNetwork
-from config import STARTING_ENERGY, FOOD_ENERGY_YIELD, PREY_ENERGY_YIELD, DEFAULT_VISION_RANGE, BASE_SPEED_MULTIPLIER
+from config import STARTING_ENERGY, FOOD_ENERGY_YIELD, PREY_ENERGY_YIELD, DEFAULT_VISION_RANGE, BASE_SPEED_MULTIPLIER, EXPLORATION_FITNESS_WEIGHT, EFFICIENCY_FITNESS_WEIGHT
 
 
 class Creature:
@@ -21,6 +21,7 @@ class Creature:
         self.mating_cooldown = 0
         self.omnivore = omnivore
         self.angle = np.random.uniform(0, 2 * np.pi)
+        self.distance_traveled = 0.0
         self.brain = brain if brain else NeuralNetwork()
 
     def update(self, food_list, other_creatures, width, height, is_winter=False, hearing_level=0.0):
@@ -81,6 +82,8 @@ class Creature:
         
         self.x += np.cos(self.angle) * speed
         self.y += np.sin(self.angle) * speed
+        self.distance_traveled += speed
+        
         # Wrap around window
         self.x = self.x % width
         self.y = self.y % height
@@ -120,7 +123,9 @@ class Creature:
         return None
 
     def get_fitness(self):
-        return self.survival_time + self.food_eaten * 50 + self.bonus_fitness
+        distance_bonus = self.distance_traveled * EXPLORATION_FITNESS_WEIGHT
+        efficiency_bonus = (self.food_eaten / (self.survival_time + 1)) * EFFICIENCY_FITNESS_WEIGHT
+        return self.survival_time + self.food_eaten * 50 + self.bonus_fitness + distance_bonus + efficiency_bonus
 
     def clone(self):
         clone = Creature(self.x, self.y, energy=STARTING_ENERGY, 

@@ -209,6 +209,10 @@ class Game:
                                 creature.mating_cooldown = MATING_COOLDOWN_FRAMES
                                 mate.mating_cooldown = MATING_COOLDOWN_FRAMES
                                 
+                                # Add fitness bonus for successful mating
+                                creature.bonus_fitness += MATING_FITNESS_BONUS
+                                mate.bonus_fitness += MATING_FITNESS_BONUS
+                                
                                 # Spawn child
                                 child_brain = NeuralNetwork.crossover(creature.brain, mate.brain)
                                 child_brain.mutate(self.ga.mutation_rate, self.ga.mutation_strength)

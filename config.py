@@ -17,12 +17,15 @@ PREY_ENERGY_YIELD = 75.0
 MATING_ENERGY_THRESHOLD = 80.0
 MATING_ENERGY_COST = 40.0
 MATING_COOLDOWN_FRAMES = 100
+MATING_FITNESS_BONUS = 60.0
+EXPLORATION_FITNESS_WEIGHT = 0.05
+EFFICIENCY_FITNESS_WEIGHT = 500.0
 
 # Brain I/O Configuration
 # "LOAD_AND_SAVE": Loads existing brains from file, saves new champions.
 # "NEW_AND_SAVE": Ignores existing files (fresh start), saves new champions.
 # "NEW_NO_SAVE": Ignores existing files, does NOT save to files.
-BRAIN_IO_MODE = "LOAD_AND_SAVE"
+BRAIN_IO_MODE = "NEW_AND_SAVE"
 
 # Genetics
 DEFAULT_VISION_RANGE = 150.0
