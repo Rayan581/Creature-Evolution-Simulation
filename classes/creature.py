@@ -10,6 +10,7 @@ class Creature:
         self.energy = energy
         self.alive = True
         self.food_eaten = 0
+        self.total_energy_gained = 0.0
         self.survival_time = 0
         self.bonus_fitness = 0
         self.age = 0
@@ -114,7 +115,9 @@ class Creature:
                 dist_sq = (self.x - c.x)**2 + (self.y - c.y)**2
                 if dist_sq < (creature_radius + c_rad)**2:
                     c.alive = False
-                    self.energy += PREY_ENERGY_YIELD * self.omnivore
+                    gain = PREY_ENERGY_YIELD * self.omnivore
+                    self.energy += gain
+                    self.total_energy_gained += gain
                     self.food_eaten += 1
                     
         # Eat food items based on type
@@ -132,6 +135,7 @@ class Creature:
                 # Only consume if it's actually worth eating (> 5 energy)
                 if gain > 5.0:
                     self.energy += gain
+                    self.total_energy_gained += gain
                     self.food_eaten += 1
                     return i
                 
@@ -139,8 +143,10 @@ class Creature:
 
     def get_fitness(self):
         distance_bonus = self.distance_traveled * EXPLORATION_FITNESS_WEIGHT
-        efficiency_bonus = (self.food_eaten / (self.survival_time + 1)) * EFFICIENCY_FITNESS_WEIGHT
-        return self.survival_time + self.food_eaten * 50 + self.bonus_fitness + distance_bonus + efficiency_bonus
+        # Efficiency is now based on energy gained per unit of survival time
+        efficiency_bonus = (self.total_energy_gained / (self.survival_time + 1)) * EFFICIENCY_FITNESS_WEIGHT
+        # Fitness = survival + (energy gained) + child bonus + distance bonus + efficiency
+        return self.survival_time + self.total_energy_gained + self.bonus_fitness + distance_bonus + efficiency_bonus
 
     def clone(self):
         clone = Creature(self.x, self.y, energy=STARTING_ENERGY, 
