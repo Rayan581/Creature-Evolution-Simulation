@@ -49,6 +49,7 @@ Each creature's brain is a Neural Network (26 inputs, 16 hidden, 4 outputs):
 
 ### Advanced Time & Session Controls
 - **[UP / DOWN ARROW]:** Adjust simulation speed (1x to 100x).
+- **[S]:** Toggle **Smart Speed**. Automatically accelerates the simulation (up to 5x) when population is low and returns to 1x during population booms.
 - **[R]:** Toggle **Auto-Focus** on the highest-fitness creature.
 - **[ESC]:** Save progress and exit. Window is **fully resizable**—the world expands dynamically!
 
