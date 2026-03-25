@@ -7,7 +7,7 @@ TITLE = "Creature Evolution Simulator"
 
 # Populations
 POPULATION_SIZE = 48
-FOOD_COUNT = 24
+FOOD_COUNT = 48
 
 # Energy & Mechanics
 STARTING_ENERGY = 100.0
@@ -33,6 +33,7 @@ ELITISM_COUNT = 4
 
 # Seasons
 SEASON_LENGTH = 600
+
 
 class Colors:
     # Backgrounds
@@ -63,7 +64,7 @@ class Colors:
 
     # Creature overlays
     SHOUT_RING = (200, 200, 200)
-    MATING_CORE = (255, 105, 180)
+    MATING_CORE = (0, 255, 255)
     FOV_CONE = (255, 255, 255, 30)       # RGBA — used on SRCALPHA surface
     ENERGY_BAR_BG = (60, 60, 60)
     ENERGY_BAR_FILL = (0, 220, 0)
