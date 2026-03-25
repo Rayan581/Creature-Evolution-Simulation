@@ -122,16 +122,18 @@ class Creature:
             dist_sq = (self.x - food.x) ** 2 + (self.y - food.y) ** 2
             if dist_sq < (creature_radius + food_radius) ** 2:
                 if food.type == "grass":
-                    # Herbivores digest grass best; carnivores get very little
-                    self.energy += food.current_energy * (1.0 - self.omnivore)
+                    gain = food.current_energy * (1.0 - self.omnivore)
                 elif food.type == "berry":
-                    # Berries: anyone can eat them, omnivores slightly less efficient
-                    self.energy += food.current_energy * (1.0 - self.omnivore * 0.4)
+                    gain = food.current_energy * (1.0 - self.omnivore * 0.4)
                 elif food.type == "meat":
-                    # Meat drops: carnivores digest well, herbivores cannot
-                    self.energy += food.current_energy * self.omnivore
-                self.food_eaten += 1
-                return i
+                    gain = food.current_energy * self.omnivore
+                else:
+                    gain = 0.0
+                # Only consume if it's actually worth eating (> 5 energy)
+                if gain > 5.0:
+                    self.energy += gain
+                    self.food_eaten += 1
+                    return i
                 
         return None
 
