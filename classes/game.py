@@ -56,11 +56,11 @@ class Game:
                 
             self.creatures.append(c)
             self.population_archive.append(c)
+        self.season_timer = 0
+        self.is_winter = False
         self.food = [self.spawn_food() for _ in range(self.food_count)]
         self.ga = GeneticAlgorithm(population_size=self.population_size)
         self.generation = 1
-        self.season_timer = 0
-        self.is_winter = False
         self.graph_data_prey = []
         self.graph_data_pred = []
         self.graph_timer = 0
