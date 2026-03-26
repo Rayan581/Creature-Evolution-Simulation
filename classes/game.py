@@ -355,6 +355,11 @@ class Game:
         for _ in ready:
             self.food.append(self.spawn_food())
 
+        # Spontaneous Natural Growth (Expansion beyond initial budget)
+        if len(self.food) < MAX_FOOD_TOTAL_CAP:
+            if random.random() < SPONTANEOUS_GROWTH_CHANCE:
+                self.food.append(self.spawn_food())
+
         if not self.creatures:
             if self.population_archive:
                 self.save_champion()

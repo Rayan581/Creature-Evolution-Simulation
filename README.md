@@ -22,6 +22,7 @@ Hunting is no longer purely determined by diet. Physicality now plays a critical
 ### Nutrient Map & Nutrient Cycles
 Ecosystem stability is now reinforced by dynamic resource management:
 - **Clustered Spawning**: Food now spawns in dense, type-specific "patches." Grass clusters near **Grass Zones** and berries grow in dedicated **Berry Groves**. These areas shift every few generations to simulate environmental changes and drive migration.
+- **Spontaneous Natural Growth**: New grass and berries now have a small chance to spawn every frame, allowing the ecosystem to grow into a lush "over-capacity" state (up to 300 items) over time.
 - **Meat Fertilizer**: A nutrient recycling system is in place. When creatures die or meat decays, there is a high chance of **instant grass regrowth** in that spot, maintaining the energy flow in the base ecosystem.
 
 ### Dynamic Food System

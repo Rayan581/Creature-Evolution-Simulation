@@ -37,6 +37,8 @@ BERRY_ZONE_COUNT = 2        # Number of purple "berry" groves
 CLUSTER_PROBABILITY = 0.85  # 85% chance to spawn near a POI
 CLUSTER_SPREAD = 180        # Standard deviation for Gaussian offset
 FERTILIZER_CHANCE = 0.5     # 50% chance of grass spawning from meat drop/death
+SPONTANEOUS_GROWTH_CHANCE = 0.015  # 1.5% chance per frame for extra food spawn
+MAX_FOOD_TOTAL_CAP = 300           # Absolute limit to prevent lag
 
 # Brain I/O Configuration
 # "LOAD_AND_SAVE": Loads existing brains from file, saves new champions.
