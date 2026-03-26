@@ -84,9 +84,14 @@ class Game:
         self.focus_toggle = False
         self.manual_focus = False
         self.smart_speed = False
-        self.smart_speed_rect = pygame.Rect(20, 115, 180, 25)
-        self.focus_toggle_rect = pygame.Rect(20, 145, 180, 25)
+        self.smart_speed_rect = pygame.Rect(20, 135, 180, 25)
+        self.focus_toggle_rect = pygame.Rect(20, 165, 180, 25)
         self.regrowth_queue = []  # list of countdown timers for grass regrowth
+        
+        # Timed Generations State
+        self.gen_timer = 0
+        self.current_time_limit = INITIAL_GENERATION_TIME
+        self.consecutive_timeouts = 0
 
     def spawn_food(self):
         # 1. Decide Type First
@@ -360,11 +365,32 @@ class Game:
             if random.random() < SPONTANEOUS_GROWTH_CHANCE:
                 self.food.append(self.spawn_food())
 
+        # Generation Timer / Extinction Logic
+        self.gen_timer += 1
+        
+        should_evolve = False
+        
+        # 1. Natural Extinction
         if not self.creatures:
-            if self.population_archive:
+            should_evolve = True
+            self.consecutive_timeouts = 0  # Reset on natural extinction
+        
+        # 2. Timed Generation Expiry
+        elif ENABLE_TIMED_GENERATIONS and self.gen_timer >= self.current_time_limit:
+            should_evolve = True
+            self.consecutive_timeouts += 1
+            # Adaptive Limit Increase
+            if self.consecutive_timeouts >= TIMEOUT_CONSECUTIVE_THRESHOLD:
+                self.current_time_limit += TIMEOUT_TIME_INCREMENT
+                self.consecutive_timeouts = 0
+
+        if should_evolve:
+            # Combine current survivors AND the archive of dead creatures
+            candidates = self.population_archive + [c for c in self.creatures if c.alive]
+            if candidates:
                 self.save_champion()
-                    
-            self.next_generation()
+                self.next_generation()
+            self.gen_timer = 0
             
         self.graph_timer += 1
         if self.graph_timer > 5:
@@ -496,11 +522,11 @@ class Game:
                 self.screen.blit(fitness_text, (x - 10, y + int(radius) + 7))
 
         # Translucent stats panel
-        panel_surf = pygame.Surface((220, 185))
+        panel_surf = pygame.Surface((220, 210))
         panel_surf.set_alpha(180)
         panel_surf.fill(Colors.PANEL_BG)
         self.screen.blit(panel_surf, (10, 10))
-        pygame.draw.rect(self.screen, Colors.PANEL_BORDER, (10, 10, 220, 185), 1)
+        pygame.draw.rect(self.screen, Colors.PANEL_BORDER, (10, 10, 220, 210), 1)
         
         font = pygame.font.SysFont("Trebuchet MS", 24, bold=True)
         text = font.render(f"Gen {self.generation}", True, Colors.UI_GEN_LABEL)
@@ -540,6 +566,17 @@ class Game:
         total_alive = sum(1 for c in self.creatures if c.alive)
         pop_c = counts_font.render(f"Alive: {total_alive}", True, Colors.UI_TEXT)
         self.screen.blit(pop_c, (20, 75))
+        
+        # Generation Timer Display
+        current_s = self.gen_timer / FPS
+        if ENABLE_TIMED_GENERATIONS:
+            limit_s = self.current_time_limit / FPS
+            timer_text = f"Time: {current_s:.1f}s / {limit_s:.1f}s"
+        else:
+            timer_text = f"Time: {current_s:.1f}s"
+        
+        timer_surf = counts_font.render(timer_text, True, Colors.UI_TEXT)
+        self.screen.blit(timer_surf, (20, 110))
         
         # --- Draw Graph ---
         graph_bg = pygame.Surface((200, 100))

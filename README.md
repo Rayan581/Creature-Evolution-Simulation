@@ -24,7 +24,13 @@ Hunting is no longer purely determined by diet. Physicality now plays a critical
 Ecosystem stability is now reinforced by dynamic resource management:
 - **Clustered Spawning**: Food now spawns in dense, type-specific "patches." Grass clusters near **Grass Zones** and berries grow in dedicated **Berry Groves**. These areas shift every few generations to simulate environmental changes and drive migration.
 - **Spontaneous Natural Growth**: New grass and berries now have a small chance to spawn every frame, allowing the ecosystem to grow into a lush "over-capacity" state (up to 300 items) over time.
-- **Meat Fertilizer**: A nutrient recycling system is in place. When creatures die or meat decays, there is a high chance of **instant grass regrowth** in that spot, maintaining the energy flow in the base ecosystem.
+- **Meat Fertilizer**: A nutrient recycling system is in place. When creatures die or meat decays, there is a high chance of **instant grass regrowth** in that spot.
+
+### Adaptive Timed Generations
+To prevent evolution from stalling in a stable ecosystem, the simulation includes an adaptive epoch system:
+- **Generation Timer**: Each generation can have a fixed time limit (e.g., 60 seconds).
+- **Adaptive Limit**: If 5 consecutive generations reach the limit without going extinct, the budget automatically increases (e.g., +15s), allowing the population more room to develop complex social or hunting behaviors.
+- **UI Clock**: A live countdown timer in the top-left panel tracks the current generation's duration and its remaining budget.
 
 ### Dynamic Food System
 Food is no longer just static points. It is a living part of the ecosystem:

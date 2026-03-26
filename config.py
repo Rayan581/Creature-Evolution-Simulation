@@ -1,4 +1,4 @@
-WIDTH = 1600
+WIDTH = 1200
 ASPECT_RATIO = 16 / 9
 HEIGHT = int(WIDTH / ASPECT_RATIO)
 
@@ -18,16 +18,16 @@ KILL_REWARD_ENERGY = 15.0
 GRASS_ENERGY = 40.0          # max energy from fresh grass
 BERRY_ENERGY = 30.0          # berries: less energy than grass, but survive winter (buffed for herbivores)
 MEAT_ENERGY = 75.0           # meat drops from dead creatures
-GRASS_MAX_AGE = 1800         # frames until grass fully decays (~30s @ 60fps)
-BERRY_MAX_AGE = 3600         # berries last longer
-MEAT_MAX_AGE  = 1200         # meat rots faster (~20s)
-FOOD_REGROWTH_DELAY = 180    # frames before eaten grass respawns (~3s)
+GRASS_MAX_AGE = 30 * FPS     # 30s until grass fully decays
+BERRY_MAX_AGE = 60 * FPS     # 60s berries last longer
+MEAT_MAX_AGE  = 20 * FPS     # 20s meat rots faster
+FOOD_REGROWTH_DELAY = 1 * FPS # 3s before eaten grass respawns
 WINTER_BERRY_RATIO  = 0.6    # fraction of new food that becomes berries in Winter
 
 MATING_ENERGY_THRESHOLD = 80.0
 MATING_ENERGY_COST = 40.0
-MATING_COOLDOWN_FRAMES = 100
-MATING_FITNESS_BONUS = 60.0
+MATING_COOLDOWN_FRAMES = int(1.6 * FPS)  # ~1.6s cooldown
+MATING_FITNESS_BONUS = 125.0
 EXPLORATION_FITNESS_WEIGHT = 0.05
 EFFICIENCY_FITNESS_WEIGHT = 500.0
 
@@ -35,16 +35,19 @@ EFFICIENCY_FITNESS_WEIGHT = 500.0
 GRASS_ZONE_COUNT = 3        # Number of green "lush" zones
 BERRY_ZONE_COUNT = 2        # Number of purple "berry" groves
 CLUSTER_PROBABILITY = 0.85  # 85% chance to spawn near a POI
-CLUSTER_SPREAD = 180        # Standard deviation for Gaussian offset
-FERTILIZER_CHANCE = 0.5     # 50% chance of grass spawning from meat drop/death
-SPONTANEOUS_GROWTH_CHANCE = 0.015  # 1.5% chance per frame for extra food spawn
-MAX_FOOD_TOTAL_CAP = 300           # Absolute limit to prevent lag
+MAX_FOOD_TOTAL_CAP = 500           # Absolute limit to prevent lag
+
+# Timed Generations
+ENABLE_TIMED_GENERATIONS = True
+INITIAL_GENERATION_TIME = 60 * FPS # Start with 60s
+TIMEOUT_CONSECUTIVE_THRESHOLD = 5  # Increase limit after 5 timeouts
+TIMEOUT_TIME_INCREMENT = 15 * FPS  # Increase limit by 15s
 
 # Brain I/O Configuration
 # "LOAD_AND_SAVE": Loads existing brains from file, saves new champions.
 # "NEW_AND_SAVE": Ignores existing files (fresh start), saves new champions.
 # "NEW_NO_SAVE": Ignores existing files, does NOT save to files.
-BRAIN_IO_MODE = "NEW_AND_SAVE"
+BRAIN_IO_MODE = "LOAD_AND_SAVE"
 
 # Genetics
 DEFAULT_VISION_RANGE = 150.0
@@ -54,7 +57,7 @@ MUTATION_STRENGTH = 0.2
 ELITISM_COUNT = 4
 
 # Seasons
-SEASON_LENGTH = 600
+SEASON_LENGTH = 10 * FPS  # 10s per season
 
 
 class Colors:
