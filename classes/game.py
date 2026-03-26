@@ -59,11 +59,16 @@ class Game:
             self.population_archive.append(c)
         self.season_timer = 0
         self.is_winter = False
-        # Initialize Fertile Zones (Nutrient Map)
-        self.fertile_zones = []
-        for _ in range(FERTILE_ZONE_COUNT):
-            self.fertile_zones.append((random.uniform(100, self.width - 100), 
-                                      random.uniform(100, self.height - 100)))
+        # Initialize Separate Fertile Zones (Nutrient Map)
+        self.grass_zones = []
+        for _ in range(GRASS_ZONE_COUNT):
+            self.grass_zones.append((random.uniform(100, self.width - 100), 
+                                     random.uniform(100, self.height - 100)))
+        
+        self.berry_zones = []
+        for _ in range(BERRY_ZONE_COUNT):
+            self.berry_zones.append((random.uniform(100, self.width - 100), 
+                                     random.uniform(100, self.height - 100)))
 
         self.food = [self.spawn_food() for _ in range(self.food_count)]
         self.ga = GeneticAlgorithm(population_size=self.population_size)
@@ -84,26 +89,27 @@ class Game:
         self.regrowth_queue = []  # list of countdown timers for grass regrowth
 
     def spawn_food(self):
-        # 85% chance to spawn near a Fertile Zone (POI)
-        if random.random() < CLUSTER_PROBABILITY and self.fertile_zones:
-            zone_x, zone_y = random.choice(self.fertile_zones)
-            # Use Gaussian distribution for more natural clusters
+        # 1. Decide Type First
+        if self.is_winter and random.random() < WINTER_BERRY_RATIO:
+            f_type = FoodItem.TYPE_BERRY
+            zones = self.berry_zones
+        else:
+            f_type = FoodItem.TYPE_GRASS
+            zones = self.grass_zones
+
+        # 2. Decide Location based on Type
+        if random.random() < CLUSTER_PROBABILITY and zones:
+            zone_x, zone_y = random.choice(zones)
             x = np.random.normal(zone_x, CLUSTER_SPREAD)
             y = np.random.normal(zone_y, CLUSTER_SPREAD)
-            
-            # Clamp to screen
             x = max(0, min(self.width, x))
             y = max(0, min(self.height, y))
         else:
-            # 15% Background noise — completely random
             x = random.uniform(0, self.width)
             y = random.uniform(0, self.height)
 
-        # In Winter, a fraction of food spawns as hardy berries
-        if self.is_winter and random.random() < WINTER_BERRY_RATIO:
-            return FoodItem(x, y, FoodItem.TYPE_BERRY)
-        return FoodItem(x, y, FoodItem.TYPE_GRASS)
-
+        return FoodItem(x, y, f_type)
+        
     def spawn_meat_drop(self, x, y):
         """Create a meat pile at a dead creature's position."""
         self.food.append(FoodItem(x, y, FoodItem.TYPE_MEAT))
@@ -379,10 +385,10 @@ class Game:
         
         # Shift Fertile Zones occasionally (migration of lush areas)
         if self.generation % 2 == 0:
-            self.fertile_zones = []
-            for _ in range(FERTILE_ZONE_COUNT):
-                self.fertile_zones.append((random.uniform(100, self.width - 100), 
-                                          random.uniform(100, self.height - 100)))
+            self.grass_zones = [(random.uniform(100, self.width-100), random.uniform(100, self.height-100)) 
+                               for _ in range(GRASS_ZONE_COUNT)]
+            self.berry_zones = [(random.uniform(100, self.width-100), random.uniform(100, self.height-100)) 
+                               for _ in range(BERRY_ZONE_COUNT)]
             
         self.food = [self.spawn_food() for _ in range(self.food_count)]
 

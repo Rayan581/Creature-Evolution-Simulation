@@ -32,7 +32,8 @@ EXPLORATION_FITNESS_WEIGHT = 0.05
 EFFICIENCY_FITNESS_WEIGHT = 500.0
 
 # Food Overhaul & Nutrient Map
-FERTILE_ZONE_COUNT = 4      # Number of lush "Points of Interest"
+GRASS_ZONE_COUNT = 3        # Number of green "lush" zones
+BERRY_ZONE_COUNT = 2        # Number of purple "berry" groves
 CLUSTER_PROBABILITY = 0.85  # 85% chance to spawn near a POI
 CLUSTER_SPREAD = 180        # Standard deviation for Gaussian offset
 FERTILIZER_CHANCE = 0.5     # 50% chance of grass spawning from meat drop/death
