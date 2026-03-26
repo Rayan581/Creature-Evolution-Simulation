@@ -108,9 +108,22 @@ class Creature:
     def check_eat(self, food_list, other_creatures, food_radius=6):
         creature_radius = 10 * np.sqrt(self.size)
         
-        # Eat other creatures logic (if omnivore score is higher by 0.2 AND touch them)
+        # Eat other creatures logic
         for c in other_creatures:
+            if not c.alive: continue
+            
+            can_eat = False
+            # Standard Predation: must be more carnivorous AND large enough (90% size)
             if self.omnivore > c.omnivore + 0.2:
+                if self.size >= c.size * 0.9:
+                    can_eat = True
+            
+            # Cannibalism: high-omnivore carnivores can eat other carnivores if they are much larger (>30%)
+            elif self.omnivore > 0.7 and c.omnivore > 0.7:
+                if self.size > c.size * 1.3:
+                    can_eat = True
+            
+            if can_eat:
                 c_rad = 10 * np.sqrt(c.size)
                 dist_sq = (self.x - c.x)**2 + (self.y - c.y)**2
                 if dist_sq < (creature_radius + c_rad)**2:
