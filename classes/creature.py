@@ -25,7 +25,7 @@ class Creature:
         self.distance_traveled = 0.0
         self.brain = brain if brain else NeuralNetwork()
 
-    def update(self, food_list, other_creatures, width, height, is_winter=False, hearing_level=0.0):
+    def update(self, food_list, other_creatures, width, height, dt=1.0, is_winter=False, hearing_level=0.0):
         if not self.alive:
             return
         inputs = np.zeros(26)
@@ -40,7 +40,7 @@ class Creature:
         ray_length = self.vision_range
         
         if self.mating_cooldown > 0:
-            self.mating_cooldown -= 1
+            self.mating_cooldown = max(0, self.mating_cooldown - dt)
             
         for i, angle in enumerate(ray_angles):
             ray_dx = np.cos(angle)
@@ -76,16 +76,16 @@ class Creature:
         
         outputs = self.brain.forward(inputs)
         
-        self.angle += outputs[0] * 0.15
+        self.angle += outputs[0] * 0.15 * dt
         # Herbivores are leaner and faster — up to +40% speed for omnivore=0
         speed_bonus = 1.0 + 0.4 * (1.0 - self.omnivore)
         speed = max(0, outputs[1]) * (BASE_SPEED_MULTIPLIER / np.sqrt(self.size)) * speed_bonus
         self.shout_intensity = max(0.0, min(1.0, outputs[2]))
         self.mating_urge = max(0.0, min(1.0, outputs[3]))
         
-        self.x += np.cos(self.angle) * speed
-        self.y += np.sin(self.angle) * speed
-        self.distance_traveled += speed
+        self.x += np.cos(self.angle) * speed * dt
+        self.y += np.sin(self.angle) * speed * dt
+        self.distance_traveled += speed * dt
         
         # Wrap around window
         self.x = self.x % width
@@ -99,9 +99,9 @@ class Creature:
             winter_mult = 1.2 + 0.3 * self.omnivore
             base_drain *= winter_mult
             
-        self.energy -= base_drain
-        self.survival_time += 1
-        self.age += 1
+        self.energy -= base_drain * dt
+        self.survival_time += dt
+        self.age += dt
         if self.energy <= 0:
             self.alive = False
 

@@ -49,9 +49,9 @@ class FoodItem:
         b = int(self._full_color[2] * t + Colors.FOOD_DEAD[2] * (1 - t))
         return (r, g, b)
 
-    def tick(self):
-        """Advance age by one frame."""
-        self.age += 1
+    def tick(self, dt=1.0):
+        """Advance age by delta-time."""
+        self.age += dt
 
     def radius(self):
         """Visual radius shrinks slightly as food decays."""

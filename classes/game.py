@@ -261,8 +261,12 @@ class Game:
             for y_line in range(grid_offset_y, self.height, 50):
                 pygame.draw.line(self.screen, Colors.GRID_LINE, (0, y_line), (self.width, y_line))
 
-            for _ in range(self.speed_multiplier):
-                self.update()
+            # Calculate delta-time (normalized to 60fps)
+            actual_dt = self.clock.tick(FPS) / (1000.0 / FPS)
+            actual_dt = min(actual_dt, 3.0)  # Safety cap for large lag spikes
+            
+            # Use a single update pass with scaled dt for real-time consistency
+            self.update(actual_dt * self.speed_multiplier)
 
             if self.focus_toggle:
                 alive_creatures = [c for c in self.creatures if c.alive]
@@ -272,10 +276,10 @@ class Game:
             self.draw()
 
             pygame.display.flip()
-            self.clock.tick(FPS)
+            # self.clock.tick(FPS) is now at the start of the loop for dt calculation
         pygame.quit()
 
-    def update(self):
+    def update(self, dt):
         new_offspring = []
         
         # Prune dead creatures from the active list; spawn meat drops
@@ -301,13 +305,15 @@ class Game:
                             hearing_level += s.shout_intensity / max(1.0, (dist / 10.0))
                 hearing_level = min(1.0, hearing_level)
                 
-                creature.update(self.food, other_creatures, self.width, self.height, is_winter=self.is_winter, hearing_level=hearing_level)
+                creature.update(self.food, other_creatures, self.width, self.height, dt=dt, is_winter=self.is_winter, hearing_level=hearing_level)
                 
                 eaten_idx = creature.check_eat(self.food, other_creatures)
                 if eaten_idx is not None:
                     eaten = self.food.pop(eaten_idx)
                     # Only grass triggers a regrowth timer; berries/meat don't respawn
-                    if eaten.type == FoodItem.TYPE_GRASS:
+                    if eaten.type == FoodItem.TYPE_MEAT:
+                        pass # No regrowth for meat
+                    else:
                         self.regrowth_queue.append(FOOD_REGROWTH_DELAY)
                 
                 # Mating mechanics
@@ -351,10 +357,10 @@ class Game:
         prev_grass = sum(1 for f in self.food if f.type != FoodItem.TYPE_MEAT)
         self.food = [f for f in self.food if not f.is_dead]
         for f in self.food:
-            f.tick()
+            f.tick(dt)
 
         # Regrowth queue: tick down timers, spawn new grass when ready
-        self.regrowth_queue = [t - 1 for t in self.regrowth_queue]
+        self.regrowth_queue = [t - dt for t in self.regrowth_queue]
         ready = [t for t in self.regrowth_queue if t <= 0]
         self.regrowth_queue = [t for t in self.regrowth_queue if t > 0]
         for _ in ready:
@@ -362,11 +368,11 @@ class Game:
 
         # Spontaneous Natural Growth (Expansion beyond initial budget)
         if len(self.food) < MAX_FOOD_TOTAL_CAP:
-            if random.random() < SPONTANEOUS_GROWTH_CHANCE:
+            if random.random() < SPONTANEOUS_GROWTH_CHANCE * dt:
                 self.food.append(self.spawn_food())
 
         # Generation Timer / Extinction Logic
-        self.gen_timer += 1
+        self.gen_timer += dt
         
         should_evolve = False
         
