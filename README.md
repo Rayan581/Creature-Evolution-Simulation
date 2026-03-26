@@ -19,6 +19,11 @@ Hunting is no longer purely determined by diet. Physicality now plays a critical
 - **Size Dependency:** A predator must be at least **90% of the size** of its prey to successfully consume it. This prevents tiny carnivores from taking down massive herbivores.
 - **Cannibalism:** Highly specialized carnivores (Omnivore > 0.7) can now turn on their own kind. A carnivore can eat another carnivore if it is significantly larger (at least **30% larger**), introducing a new layer of internal population regulation.
 
+### Nutrient Map & Nutrient Cycles
+Ecosystem stability is now reinforced by dynamic resource management:
+- **Clustered Spawning**: Food now spawns in dense "patches" near **Fertile Zones (POIs)**. These lush areas shift every few generations to simulate a changing environment and force migration.
+- **Meat Fertilizer**: A nutrient recycling system is in place. When creatures die or meat decays, there is a high chance of **instant grass regrowth** in that spot, maintaining the energy flow in the base ecosystem.
+
 ### Dynamic Food System
 Food is no longer just static points. It is a living part of the ecosystem:
 - **Food Types:**

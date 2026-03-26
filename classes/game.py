@@ -59,6 +59,12 @@ class Game:
             self.population_archive.append(c)
         self.season_timer = 0
         self.is_winter = False
+        # Initialize Fertile Zones (Nutrient Map)
+        self.fertile_zones = []
+        for _ in range(FERTILE_ZONE_COUNT):
+            self.fertile_zones.append((random.uniform(100, self.width - 100), 
+                                      random.uniform(100, self.height - 100)))
+
         self.food = [self.spawn_food() for _ in range(self.food_count)]
         self.ga = GeneticAlgorithm(population_size=self.population_size)
         self.generation = 1
@@ -78,8 +84,21 @@ class Game:
         self.regrowth_queue = []  # list of countdown timers for grass regrowth
 
     def spawn_food(self):
-        x = random.uniform(0, self.width)
-        y = random.uniform(0, self.height)
+        # 85% chance to spawn near a Fertile Zone (POI)
+        if random.random() < CLUSTER_PROBABILITY and self.fertile_zones:
+            zone_x, zone_y = random.choice(self.fertile_zones)
+            # Use Gaussian distribution for more natural clusters
+            x = np.random.normal(zone_x, CLUSTER_SPREAD)
+            y = np.random.normal(zone_y, CLUSTER_SPREAD)
+            
+            # Clamp to screen
+            x = max(0, min(self.width, x))
+            y = max(0, min(self.height, y))
+        else:
+            # 15% Background noise — completely random
+            x = random.uniform(0, self.width)
+            y = random.uniform(0, self.height)
+
         # In Winter, a fraction of food spawns as hardy berries
         if self.is_winter and random.random() < WINTER_BERRY_RATIO:
             return FoodItem(x, y, FoodItem.TYPE_BERRY)
@@ -88,6 +107,13 @@ class Game:
     def spawn_meat_drop(self, x, y):
         """Create a meat pile at a dead creature's position."""
         self.food.append(FoodItem(x, y, FoodItem.TYPE_MEAT))
+        
+        # Meat Fertilizer: chance to spawn a grass item nearby immediately
+        if random.random() < FERTILIZER_CHANCE:
+            # Spawn grass near the death site
+            fx = x + random.uniform(-20, 20)
+            fy = y + random.uniform(-20, 20)
+            self.food.append(FoodItem(fx, fy, FoodItem.TYPE_GRASS))
 
     def save_champion(self):
         if BRAIN_IO_MODE in ["LOAD_AND_SAVE", "NEW_AND_SAVE"] and self.population_archive:
@@ -350,6 +376,14 @@ class Game:
         self.generation += 1
         self.season_timer = 0
         self.is_winter = False
+        
+        # Shift Fertile Zones occasionally (migration of lush areas)
+        if self.generation % 2 == 0:
+            self.fertile_zones = []
+            for _ in range(FERTILE_ZONE_COUNT):
+                self.fertile_zones.append((random.uniform(100, self.width - 100), 
+                                          random.uniform(100, self.height - 100)))
+            
         self.food = [self.spawn_food() for _ in range(self.food_count)]
 
     def draw(self):

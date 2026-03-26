@@ -1,4 +1,4 @@
-WIDTH = 1200
+WIDTH = 1600
 ASPECT_RATIO = 16 / 9
 HEIGHT = int(WIDTH / ASPECT_RATIO)
 
@@ -7,7 +7,7 @@ TITLE = "Creature Evolution Simulator"
 
 # Populations
 POPULATION_SIZE = 48
-FOOD_COUNT = 48
+FOOD_COUNT = 96
 
 # Energy & Mechanics
 STARTING_ENERGY = 100.0
@@ -31,11 +31,17 @@ MATING_FITNESS_BONUS = 60.0
 EXPLORATION_FITNESS_WEIGHT = 0.05
 EFFICIENCY_FITNESS_WEIGHT = 500.0
 
+# Food Overhaul & Nutrient Map
+FERTILE_ZONE_COUNT = 4      # Number of lush "Points of Interest"
+CLUSTER_PROBABILITY = 0.85  # 85% chance to spawn near a POI
+CLUSTER_SPREAD = 180        # Standard deviation for Gaussian offset
+FERTILIZER_CHANCE = 0.5     # 50% chance of grass spawning from meat drop/death
+
 # Brain I/O Configuration
 # "LOAD_AND_SAVE": Loads existing brains from file, saves new champions.
 # "NEW_AND_SAVE": Ignores existing files (fresh start), saves new champions.
 # "NEW_NO_SAVE": Ignores existing files, does NOT save to files.
-BRAIN_IO_MODE = "LOAD_AND_SAVE"
+BRAIN_IO_MODE = "NEW_AND_SAVE"
 
 # Genetics
 DEFAULT_VISION_RANGE = 150.0
