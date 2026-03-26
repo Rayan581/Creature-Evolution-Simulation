@@ -84,8 +84,8 @@ class Game:
         self.focus_toggle = False
         self.manual_focus = False
         self.smart_speed = False
-        self.smart_speed_rect = pygame.Rect(20, 135, 180, 25)
-        self.focus_toggle_rect = pygame.Rect(20, 165, 180, 25)
+        self.smart_speed_rect = pygame.Rect(20, 153, 180, 25)
+        self.focus_toggle_rect = pygame.Rect(20, 183, 180, 25)
         self.regrowth_queue = []  # list of countdown timers for grass regrowth
         
         # Timed Generations State
@@ -528,11 +528,11 @@ class Game:
                 self.screen.blit(fitness_text, (x - 10, y + int(radius) + 7))
 
         # Translucent stats panel
-        panel_surf = pygame.Surface((220, 210))
+        panel_surf = pygame.Surface((220, 225))
         panel_surf.set_alpha(180)
         panel_surf.fill(Colors.PANEL_BG)
         self.screen.blit(panel_surf, (10, 10))
-        pygame.draw.rect(self.screen, Colors.PANEL_BORDER, (10, 10, 220, 210), 1)
+        pygame.draw.rect(self.screen, Colors.PANEL_BORDER, (10, 10, 220, 225), 1)
         
         font = pygame.font.SysFont("Trebuchet MS", 24, bold=True)
         text = font.render(f"Gen {self.generation}", True, Colors.UI_GEN_LABEL)
@@ -541,11 +541,19 @@ class Game:
         season_str = "Winter" if self.is_winter else "Summer"
         season_color = Colors.UI_SEASON_WINTER if self.is_winter else Colors.UI_SEASON_SUMMER
         s_text = pygame.font.SysFont("Trebuchet MS", 20).render(f"Season: {season_str}", True, season_color)
-        self.screen.blit(s_text, (20, 50))
+        self.screen.blit(s_text, (20, 45))
         
         counts_font = pygame.font.SysFont("Trebuchet MS", 18)
+        
+        total_alive = sum(1 for c in self.creatures if c.alive)
+        pop_c = counts_font.render(f"Alive: {total_alive}", True, Colors.UI_TEXT)
+        self.screen.blit(pop_c, (20, 68))
+        
         speed_text = counts_font.render(f"Speed: {self.speed_multiplier}x", True, Colors.UI_TEXT)
-        self.screen.blit(speed_text, (20, 90))
+        self.screen.blit(speed_text, (20, 88))
+        
+        fps_text = counts_font.render(f"FPS: {int(self.clock.get_fps())}", True, Colors.UI_TEXT)
+        self.screen.blit(fps_text, (20, 108))
         
         # Smart Speed Button
         btn_color = (100, 255, 100) if self.smart_speed else (150, 150, 150)
@@ -569,9 +577,6 @@ class Game:
         self.screen.blit(f_btn_surf, (self.focus_toggle_rect.centerx - f_btn_surf.get_width()//2, 
                                      self.focus_toggle_rect.centery - f_btn_surf.get_height()//2))
         
-        total_alive = sum(1 for c in self.creatures if c.alive)
-        pop_c = counts_font.render(f"Alive: {total_alive}", True, Colors.UI_TEXT)
-        self.screen.blit(pop_c, (20, 75))
         
         # Generation Timer Display
         current_s = self.gen_timer / FPS
@@ -582,7 +587,7 @@ class Game:
             timer_text = f"Time: {current_s:.1f}s"
         
         timer_surf = counts_font.render(timer_text, True, Colors.UI_TEXT)
-        self.screen.blit(timer_surf, (20, 110))
+        self.screen.blit(timer_surf, (20, 128))
         
         # --- Draw Graph ---
         graph_bg = pygame.Surface((200, 100))
