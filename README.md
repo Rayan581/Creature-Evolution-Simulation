@@ -17,7 +17,8 @@ The rigid "Predator vs Prey" labels have been replaced by a continuous **Omnivor
 ### Size-Weighted Predation & Cannibalism
 Hunting is no longer purely determined by diet. Physicality now plays a critical role:
 - **Size Dependency:** A predator must be at least **90% of the size** of its prey to successfully consume it. This prevents tiny carnivores from taking down massive herbivores.
-- **Cannibalism:** Highly specialized carnivores (Omnivore > 0.7) can now turn on their own kind. A carnivore can eat another carnivore if it is significantly larger (at least **30% larger**), introducing a new layer of internal population regulation.
+- **Split Predation Reward:** To prevent energy over-inflation, the kill reward is split. Predators receive a small **immediate boost (15 energy)** upon the kill to encourage hunting, while the majority of the nutrition (**75 energy**) is dropped as a carcass (Meat Drop) that must be consumed to fully recharge.
+- **Cannibalism:** Highly specialized carnivores (Omnivore > 0.7) can now turn on their own kind. A carnivore can eat another carnivore if it is significantly larger (at least **30% larger**).
 
 ### Nutrient Map & Nutrient Cycles
 Ecosystem stability is now reinforced by dynamic resource management:

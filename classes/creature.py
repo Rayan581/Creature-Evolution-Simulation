@@ -1,6 +1,6 @@
 import numpy as np
 from .neural_network import NeuralNetwork
-from config import STARTING_ENERGY, PREY_ENERGY_YIELD, DEFAULT_VISION_RANGE, BASE_SPEED_MULTIPLIER, EXPLORATION_FITNESS_WEIGHT, EFFICIENCY_FITNESS_WEIGHT
+from config import STARTING_ENERGY, KILL_REWARD_ENERGY, DEFAULT_VISION_RANGE, BASE_SPEED_MULTIPLIER, EXPLORATION_FITNESS_WEIGHT, EFFICIENCY_FITNESS_WEIGHT
 
 
 class Creature:
@@ -128,7 +128,8 @@ class Creature:
                 dist_sq = (self.x - c.x)**2 + (self.y - c.y)**2
                 if dist_sq < (creature_radius + c_rad)**2:
                     c.alive = False
-                    gain = PREY_ENERGY_YIELD * self.omnivore
+                    # Small immediate incentive boost
+                    gain = KILL_REWARD_ENERGY * self.omnivore
                     self.energy += gain
                     self.total_energy_gained += gain
                     self.food_eaten += 1

@@ -12,7 +12,7 @@ FOOD_COUNT = 96
 # Energy & Mechanics
 STARTING_ENERGY = 100.0
 FOOD_ENERGY_YIELD = 40.0  # legacy kept for compatibility
-PREY_ENERGY_YIELD = 75.0
+KILL_REWARD_ENERGY = 15.0
 
 # Food System
 GRASS_ENERGY = 40.0          # max energy from fresh grass
